@@ -30,13 +30,21 @@ public class SecurityConfig {
         http.csrf().disable()
             .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
             .authorizeRequests()
+                // 公开访问的静态资源和页面
                 .antMatchers("/", "/index.html", "/favicon.ico").permitAll()
                 .antMatchers("/css/**", "/js/**", "/img/**").permitAll()
+                // 用户认证相关（注册、登录、发送验证码）
                 .antMatchers("/api/user/register", "/api/user/login", "/api/user/send-code").permitAll()
+                // 商品列表和详情可以匿名访问
                 .antMatchers("/api/goods/list", "/api/goods/**").permitAll()
-                .antMatchers("/api/admin/arbitration").authenticated()
-                .antMatchers("/api/admin/arbitration/**").authenticated()
+                .antMatchers("/api/favorite/**").authenticated()  // 收藏功能
+                .antMatchers("/api/order/**").authenticated()  // 订单功能
+                .antMatchers("/api/message/**").authenticated()  // 消息功能
+                .antMatchers("/api/wallet/**").authenticated()  // 钱包功能
+                .antMatchers("/api/evaluation/**").authenticated()  // 评价功能
+                // 管理员接口
                 .antMatchers("/api/admin/**").hasRole("admin")
+                // 其他所有请求需要认证
                 .anyRequest().authenticated()
             .and()
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);

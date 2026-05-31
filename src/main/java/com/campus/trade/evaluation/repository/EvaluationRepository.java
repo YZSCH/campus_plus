@@ -7,8 +7,8 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.List;
 
 public interface EvaluationRepository extends JpaRepository<Evaluation, Long> {
-    Page<Evaluation> findByTargetUserIdOrderByCreatedAtDesc(Long targetUserId, Pageable pageable);
-    Page<Evaluation> findByUserIdOrderByCreatedAtDesc(Long userId, Pageable pageable);
-    List<Evaluation> findByGoodsId(Long goodsId);
+    Page<Evaluation> findByTargetUserIdAndStatusOrderByCreatedAtDesc(Long targetUserId, Integer status, Pageable pageable);
+    Page<Evaluation> findByUserIdAndStatusOrderByCreatedAtDesc(Long userId, Integer status, Pageable pageable);
+    List<Evaluation> findByGoodsIdAndStatusOrderByCreatedAtDesc(Long goodsId, Integer status);
     boolean existsByOrderIdAndUserId(Long orderId, Long userId);
 }

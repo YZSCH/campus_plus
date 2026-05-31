@@ -31,4 +31,23 @@ public class EvaluationController {
     public ApiResult<List<Evaluation>> listByGoods(@PathVariable Long goodsId) {
         return evaluationService.listByGoods(goodsId);
     }
+
+    @GetMapping("/mine")
+    public ApiResult<Page<Evaluation>> mine(Authentication auth,
+                                            @RequestParam(defaultValue = "0") int page,
+                                            @RequestParam(defaultValue = "20") int size) {
+        return evaluationService.listMine((Long) auth.getPrincipal(), page, size);
+    }
+
+    @DeleteMapping("/{id}")
+    public ApiResult<String> delete(@PathVariable Long id, Authentication auth) {
+        return evaluationService.delete(id, (Long) auth.getPrincipal());
+    }
+
+    @PostMapping("/{id}/report")
+    public ApiResult<String> report(@PathVariable Long id,
+                                    @RequestParam String reason,
+                                    Authentication auth) {
+        return evaluationService.report(id, (Long) auth.getPrincipal(), reason);
+    }
 }

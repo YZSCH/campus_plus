@@ -132,6 +132,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
   </div>
   <div class="categories" id="catTags">
     <span class="cat active" onclick="filterCat('')">全部</span>
+    <span class="cat" onclick="filterCat('favorites')">⭐ 收藏</span>
     <span class="cat" onclick="filterCat('教材教辅')">📖 教材</span>
     <span class="cat" onclick="filterCat('电子数码')">💻 数码</span>
     <span class="cat" onclick="filterCat('生活用品')">🏡 生活</span>
@@ -300,6 +301,22 @@ function filterCat(c){curCat=c;document.querySelectorAll('.cat').forEach(t=>t.cl
 function searchGoods(){curKw=document.getElementById('searchInput').value;loadGoods()}
 async function loadGoods(){
   const el=document.getElementById('goodsList');el.innerHTML='<div class="spinner"></div>'
+  if(curCat==='favorites'){
+    const u=U();if(!u){el.innerHTML='<div class="empty"><div class="ea">⭐</div><h3>请先登录</h3><p>登录后查看收藏商品</p></div>';return}
+    try{
+      const r=await fetch(`${API}/api/favorite/list`,{headers:{'Authorization':'Bearer '+T()}})
+      const d=await r.json()
+      if(d.code===200&&d.data){
+        if(!d.data.length){el.innerHTML='<div class="empty"><div class="ea">⭐</div><h3>暂无收藏</h3><p>浏览商品时点击收藏即可添加</p></div>';return}
+        el.innerHTML=d.data.map(g=>{
+          const ic=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'🏡':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':'📎'
+          const cl=g.category==='教材教辅'?'b1':g.category==='电子数码'?'b2':g.category==='生活用品'?'b3':g.category==='服饰美妆'?'b4':g.category==='体育用品'?'b5':'b6'
+          return `<div class="gc" onclick="showDetail(${g.id})"><div class="gci"><div class="gicon ${cl}">${ic}</div><div class="ginfo"><div class="gtitle">${g.title}</div><div class="gprice">¥${g.price}<s>${g.category||''}</s></div><div class="gmeta"><span>📍 ${g.location||'校内'}</span><span class="tag g">在售</span></div></div></div></div>`
+        }).join('')
+      }else{el.innerHTML='<div class="empty"><div class="ea">😶</div><h3>加载失败</h3></div>'}
+    }catch(e){el.innerHTML='<div class="empty"><div class="ea">😶</div><h3>网络开小差了</h3></div>'}
+    return
+  }
   let u=`${API}/api/goods/list?page=0&size=50`
   if(curCat)u+=`&category=${curCat}`;if(curKw)u+=`&keyword=${curKw}`
   try{
@@ -320,10 +337,23 @@ async function showDetail(id){
     const r=await fetch(`${API}/api/goods/${id}`);const d=await r.json()
     if(d.code===200&&d.data){
       const g=d.data;const u=U()
-      const ic=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'🏡':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':'📎'
+      const ic=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':''
       const bg=g.category==='教材教辅'?'#F5F0EB':g.category==='电子数码'?'#F0F3F7':g.category==='生活用品'?'#F0F7F2':g.category==='服饰美妆'?'#FDF0ED':g.category==='体育用品'?'#F5F0EB':'#F9F4F0'
       const own=u&&g.userId==u.userId
-      document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="detail-banner" style="background:${bg}">${ic}</div><div class="detail-title">${g.title}</div><div class="detail-price">¥${g.price}</div>${g.description?`<div class="detail-desc">${g.description}</div>`:''}<div class="detail-meta"><span>📞 ${g.contactPhone||'未填'}</span>${g.wechat?`<span>💬 ${g.wechat}</span>`:''}<span>📍 ${g.location||'校内'}</span></div><div class="detail-actions">${own?'<div style="padding:15px;border-radius:12px;background:var(--ivory);text-align:center;font-size:14px;color:var(--muted);width:100%">这是我的商品</div>':`<button class="btn btn-primary" onclick="contactSeller(${g.id},${g.userId},'${g.title.replace(/'/g,"\\'")}')">💬 联系卖家</button>`}<button class="btn btn-outline" onclick="closeModal('detailModal')">关闭</button></div>`
+            
+      // 构建操作按钮
+      let actionButtons=''
+      if(own){
+        actionButtons='<div style="padding:15px;border-radius:12px;background:var(--ivory);text-align:center;font-size:14px;color:var(--muted);width:100%">这是我的商品</div>'
+      }else if(u){
+        // 已登录且不是自己的商品，显示收藏和联系卖家按钮
+        actionButtons=`<button class="btn" style="flex:1;background:var(--rose-light);color:var(--rose-dark);border:2px solid var(--rose);border-radius:12px" onclick="toggleFavoriteDetail(${g.id},this)">⭐ 收藏</button><button class="btn btn-primary" style="flex:1" onclick="contactSeller(${g.id},${g.userId},'${g.title.replace(/'/g,"\\'")}')">💬 联系卖家</button>`
+      }else{
+        // 未登录，只显示联系卖家按钮（会提示登录）
+        actionButtons=`<button class="btn btn-primary" style="flex:1" onclick="contactSeller(${g.id},${g.userId},'${g.title.replace(/'/g,"\\'")}')"> 联系卖家</button>`
+      }
+            
+      document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="detail-banner" style="background:${bg}">${ic}</div><div class="detail-title">${g.title}</div><div class="detail-price">¥${g.price}</div>${g.description?`<div class="detail-desc">${g.description}</div>`:''}<div class="detail-meta"><span> ${g.contactPhone||'未填'}</span>${g.wechat?`<span>💬 ${g.wechat}</span>`:''}<span> ${g.location||'校内'}</span></div><div class="detail-actions" style="display:flex;gap:10px">${actionButtons}<button class="btn btn-outline" style="flex:1" onclick="closeModal('detailModal')">关闭</button></div>`
       openModal('detailModal')
     }
   }catch(e){}
@@ -580,8 +610,76 @@ function renderProfile(){
   const u=U();const t=T();const c=document.getElementById('profileContent')
   if(!t||!u){c.innerHTML=`<div class="profile-empty"><div class="ac">👤</div><h2>未登录</h2><p>登录后发布商品、管理订单</p><button class="btn btn-primary" style="width:200px;display:inline-block" onclick="openModal('loginModal')">登录/注册</button></div>`;return}
   const bc=u.authStatus===1?'v':'';const bt=u.authStatus===1?'✅ 已认证':u.authStatus===2?'❌ 认证失败':'⏳ 未认证'
-  c.innerHTML=`<div class="profile-hero"><div class="pha">👤</div><div class="phn">${u.username}</div><div class="phs">${u.role==='admin'?'管理员':'普通用户'} · 信用 ${u.creditScore||100}</div><div><span class="profile-badge ${bc}">${bt}</span></div></div><div class="ms"><div class="mc"><div class="mi2" onclick="showWallet()"><span class="mi2i">💰</span>我的钱包<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('arbitration')"><span class="mi2i">⚖️</span>仲裁中心<span class="mi2a">→</span></div><div class="mi2" onclick="showMine()"><span class="mi2i">📦</span>我的发布<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('orders')"><span class="mi2i">📋</span>我的订单<span class="mi2a">→</span></div><div class="mi2" onclick="showAuth()"><span class="mi2i">🎓</span>校园认证<span class="mi2a">→</span></div>${u.role==='admin'?`<div class="mi2" onclick="switchTab('admin-arbitration')"><span class="mi2i">📝</span>仲裁管理<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('admin-violation')"><span class="mi2i">⚠️</span>违规管理<span class="mi2a">→</span></div>`:''}</div><div class="mc"><div class="mi2" onclick="showUserInfo()"><span class="mi2i">👤</span>个人信息<span class="mi2a">→</span></div></div></div><div class="lw"><div class="lobtn" onclick="logout()">退出登录</div></div>`
+  c.innerHTML=`<div class="profile-hero"><div class="pha">👤</div><div class="phn">${u.username}</div><div class="phs">${u.role==='admin'?'管理员':'普通用户'} · 信用 ${u.creditScore||100}</div><div><span class="profile-badge ${bc}">${bt}</span></div></div><div class="ms"><div class="mc"><div class="mi2" onclick="showWallet()"><span class="mi2i">💰</span>我的钱包<span class="mi2a">→</span></div><div class="mi2" onclick="showFavorites()"><span class="mi2i">⭐</span>我的收藏<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('arbitration')"><span class="mi2i">⚖️</span>仲裁中心<span class="mi2a">→</span></div><div class="mi2" onclick="showMine()"><span class="mi2i">📦</span>我的发布<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('orders')"><span class="mi2i">📋</span>我的订单<span class="mi2a">→</span></div><div class="mi2" onclick="showAuth()"><span class="mi2i">🎓</span>校园认证<span class="mi2a">→</span></div>${u.role==='admin'?`<div class="mi2" onclick="switchTab('admin-arbitration')"><span class="mi2i">📝</span>仲裁管理<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('admin-violation')"><span class="mi2i">⚠️</span>违规管理<span class="mi2a">→</span></div><div class="mi2" onclick="showAdminGoods()"><span class="mi2i">📦</span>审核商品<span class="mi2a">→</span></div><div class="mi2" onclick="showAdminDelist()"><span class="mi2i">🗑️</span>下架管理<span class="mi2a">→</span></div>`:''}</div><div class="mc"><div class="mi2" onclick="showUserInfo()"><span class="mi2i">👤</span>个人信息<span class="mi2a">→</span></div></div></div><div class="lw"><div class="lobtn" onclick="logout()">退出登录</div></div>`
 }
+// FAVORITES
+async function showFavorites(){
+  const u=U();if(!u){openModal('loginModal');return}
+  try{
+    const r=await fetch(`${API}/api/favorite/list`,{headers:{'Authorization':'Bearer '+T()}})
+    const d=await r.json()
+    if(d.code===200&&d.data){
+      const h=d.data.length?d.data.map(g=>{
+        const ic=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'🏡':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':'📎'
+        const cl=g.category==='教材教辅'?'b1':g.category==='电子数码'?'b2':g.category==='生活用品'?'b3':g.category==='服饰美妆'?'b4':g.category==='体育用品'?'b5':'b6'
+        return `<div class="gc" onclick="showDetail(${g.id})"><div class="gci"><div class="gicon ${cl}">${ic}</div><div class="ginfo"><div class="gtitle">${g.title}</div><div class="gprice">¥${g.price}<s>${g.category||''}</s></div><div class="gmeta"><span>📍 ${g.location||'校内'}</span><button onclick="event.stopPropagation();toggleFavorite(${g.id},this)" style="padding:4px 10px;border:none;border-radius:6px;background:var(--rose-light);color:var(--rose-dark);font-size:11px;font-weight:600;cursor:pointer">取消收藏</button></div></div></div></div>`
+      }).join(''):'<div class="empty"><div class="ea">⭐</div><h3>暂无收藏</h3></div>'
+      document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="mt">⭐ 我的收藏</div>${h}<div class="btn btn-outline" onclick="closeModal('detailModal')">关闭</div>`
+      openModal('detailModal')
+    }else{
+      document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="mt">⭐ 我的收藏</div><div class="empty"><div class="ea">⭐</div><h3>暂无收藏</h3></div><div class="btn btn-outline" onclick="closeModal('detailModal')">关闭</div>`
+      openModal('detailModal')
+    }
+  }catch(e){alert('加载收藏失败')}
+}
+
+async function toggleFavorite(goodsId,btn){
+  const u=U();if(!u){openModal('loginModal');return}
+  try{
+    const r=await fetch(`${API}/api/favorite/toggle?goodsId=${goodsId}`,{method:'POST',headers:{'Authorization':'Bearer '+T()}})
+    const d=await r.json()
+    if(d.code===200){
+      if(btn){
+        btn.textContent='已取消'
+        setTimeout(()=>btn.closest('.gc').remove(),500)
+      }
+    }else{alert(d.message||'操作失败')}
+  }catch(e){alert('网络错误')}
+}
+
+// 商品详情页的收藏/取消收藏功能
+async function toggleFavoriteDetail(goodsId,btn){
+  const u=U();if(!u){openModal('loginModal');return}
+  try{
+    const token=T()
+    console.log('收藏请求 - goodsId:', goodsId, 'Token:', token)
+    
+    const r=await fetch(`${API}/api/favorite/toggle?goodsId=${goodsId}`,{method:'POST',headers:{'Authorization':'Bearer '+token}})
+    console.log('收藏请求 - 响应状态:', r.status)
+    
+    const d=await r.json()
+    console.log('收藏请求 - 响应数据:', d)
+    
+    if(d.code===200){
+      // 切换按钮状态
+      if(btn.textContent.includes('收藏')){
+        btn.innerHTML='⭐ 已收藏'
+        btn.style.background='var(--ivory)'
+        btn.style.color='var(--muted)'
+        btn.style.border='2px solid var(--border)'
+      }else{
+        btn.innerHTML='⭐ 收藏'
+        btn.style.background='var(--rose-light)'
+        btn.style.color='var(--rose-dark)'
+        btn.style.border='2px solid var(--rose)'
+      }
+    }else{alert(d.message||'操作失败')}
+  }catch(e){
+    console.error('收藏请求错误:', e)
+    alert('网络错误: ' + e.message)
+  }
+}
+
 function showMine(){
   fetch(`${API}/api/goods/mine`,{headers:{'Authorization':'Bearer '+T()}}).then(r=>r.json()).then(d=>{
     if(d.code===200&&d.data){
@@ -1206,6 +1304,94 @@ function doReview(aid,approved){
 function showModalText(title,text){
   document.getElementById('detailContent').innerHTML=`<div class=mi></div><div class=mt>${title}</div><div style=padding:30px;text-align:center;color:var(--muted)>${text}</div><button class='btn btn-outline' onclick='closeModal(\"detailModal\")'>关闭</button>`
   openModal('detailModal')
+}
+
+// ADMIN GOODS REVIEW
+function showAdminGoods(){
+  fetch(API+'/api/goods/pending?page=0&size=50',{headers:{'Authorization':'Bearer '+T()}})
+  .then(function(r){if(!r.ok){showModalText('📦 审核商品','❌ 请求失败: '+r.status);return r.json().then(function(){})}return r.json()})
+  .then(function(d){
+    if(!d||d.code!==200){showModalText('📦 审核商品','❌ '+(d?d.message:'无法获取数据'));return}
+    if(!d.data||!d.data.content){showModalText('📦 审核商品','暂无待审核商品');return}
+    if(d.data.content.length===0){
+      showModalText('📦 审核商品','暂无待审核商品')
+      return
+    }
+    var list=''
+    for(var i=0;i<d.data.content.length;i++){
+      var g=d.data.content[i]
+      var catIcon=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'🏡':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':'📎'
+      list+='<div style=background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px>'
+      list+='<div style=font-size:14px;font-weight:600>'+catIcon+' '+g.title+'</div>'
+      list+='<div style=font-size:14px;color:var(--rose-dark);font-weight:700;margin:4px 0>¥'+g.price+'</div>'
+      if(g.description)list+='<div style=font-size:12px;color:var(--muted);margin:4px 0>描述: '+g.description+'</div>'
+      list+='<div style=font-size:11px;color:var(--muted)>分类: '+g.category+' | 发布者ID: '+g.userId+'</div>'
+      if(g.createdAt)list+='<div style=font-size:11px;color:var(--muted)>提交时间: '+new Date(g.createdAt).toLocaleString('zh-CN')+'</div>'
+      list+='<div style=display:flex;gap:8px;margin-top:8px>'
+      list+='<button class=admin-goods-btn data-id='+g.id+' data-approved=true style=flex:1;padding:8px;border:none;border-radius:8px;background:var(--success);color:#fff;font-weight:600;cursor:pointer>✅ 通过</button>'
+      list+='<button class=admin-goods-btn data-id='+g.id+' data-approved=false style=flex:1;padding:8px;border:none;border-radius:8px;background:var(--error);color:#fff;font-weight:600;cursor:pointer>❌ 拒绝</button></div></div>'
+    }
+    list+='<button class="btn btn-outline" onclick="closeModal(\'detailModal\')">关闭</button>'
+    document.getElementById('detailContent').innerHTML='<div class=mi></div><div class=mt>📦 审核商品</div><div style=max-height:60vh;overflow-y:auto>'+list
+    openModal('detailModal')
+    var btns=document.querySelectorAll('.admin-goods-btn')
+    for(var j=0;j<btns.length;j++){
+      btns[j].addEventListener('click',function(){
+        var id=this.getAttribute('data-id')
+        var approved=this.getAttribute('data-approved')==='true'
+        doGoodsReview(id,approved)
+      })
+    }
+  })
+}
+function doGoodsReview(gid,approved){
+  fetch(API+'/api/goods/review?goodsId='+gid+'&approved='+approved,{method:'POST',headers:{'Authorization':'Bearer '+T()}})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(d.code===200){alert('✅ '+(approved?'已通过审核':'已拒绝'));showAdminGoods()}
+    else{alert('❌ '+d.message)}
+  })
+}
+function showAdminDelist(){
+  fetch(API+'/api/goods/onsale?page=0&size=50',{headers:{'Authorization':'Bearer '+T()}})
+  .then(function(r){if(!r.ok){showModalText('🗑️ 下架管理','❌ 请求失败: '+r.status);return r.json().then(function(){})}return r.json()})
+  .then(function(d){
+    if(!d||d.code!==200){showModalText('🗑️ 下架管理','❌ '+(d?d.message:'无法获取数据'));return}
+    if(!d.data||!d.data.content||d.data.content.length===0){
+      showModalText('🗑️ 下架管理','暂无在售商品')
+      return
+    }
+    var list=''
+    for(var i=0;i<d.data.content.length;i++){
+      var g=d.data.content[i]
+      var catIcon=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'🏡':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':'📎'
+      list+='<div style=background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px>'
+      list+='<div style=font-size:14px;font-weight:600>'+catIcon+' '+g.title+'</div>'
+      list+='<div style=font-size:14px;color:var(--rose-dark);font-weight:700;margin:4px 0>¥'+g.price+'</div>'
+      list+='<div style=font-size:11px;color:var(--muted)>分类: '+g.category+' | 发布者ID: '+g.userId+'</div>'
+      if(g.createdAt)list+='<div style=font-size:11px;color:var(--muted)>发布时间: '+new Date(g.createdAt).toLocaleString('zh-CN')+'</div>'
+      list+='<div style=display:flex;gap:8px;margin-top:8px>'
+      list+='<button class=admin-delist-btn data-id='+g.id+' style=flex:1;padding:8px;border:none;border-radius:8px;background:var(--error);color:#fff;font-weight:600;cursor:pointer>🗑️ 下架</button></div></div>'
+    }
+    list+='<button class="btn btn-outline" onclick="closeModal(\'detailModal\')">关闭</button>'
+    document.getElementById('detailContent').innerHTML='<div class=mi></div><div class=mt>🗑️ 下架管理</div><div style=max-height:60vh;overflow-y:auto>'+list
+    openModal('detailModal')
+    var btns=document.querySelectorAll('.admin-delist-btn')
+    for(var j=0;j<btns.length;j++){
+      btns[j].addEventListener('click',function(){
+        var id=this.getAttribute('data-id')
+        if(confirm('确定要下架该商品吗？'))doDelist(id)
+      })
+    }
+  })
+}
+function doDelist(gid){
+  fetch(API+'/api/goods/delist?goodsId='+gid,{method:'POST',headers:{'Authorization':'Bearer '+T()}})
+  .then(function(r){return r.json()})
+  .then(function(d){
+    if(d.code===200){alert('✅ '+d.data);showAdminDelist()}
+    else{alert('❌ '+(d.message||'失败'))}
+  })
 }
 // INIT
 
