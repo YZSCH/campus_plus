@@ -99,7 +99,7 @@ public class WalletService {
     public ApiResult<?> releaseFunds(Long orderId) {
         Order order = orderRepo.findById(orderId).orElse(null);
         if (order == null) return ApiResult.error(404, "订单不存在");
-        if (!"completed".equals(order.getStatus())) return ApiResult.error(400, "订单未完成");
+        if (!"received".equals(order.getStatus())) return ApiResult.error(400, "订单未完成");
 
         // 查找对应的付款记录
         WalletTransaction payTx = walletRepo.findByOrderIdAndType(orderId, WalletTransaction.TYPE_PAY).orElse(null);

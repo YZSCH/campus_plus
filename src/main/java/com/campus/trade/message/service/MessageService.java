@@ -48,7 +48,7 @@ public class MessageService {
                 content = "订单 " + orderNo + " 卖家已发货，请确认收货。收到商品后请点击【签收】完成交易。";
                 title = "已发货";
                 break;
-            case "completed":
+            case "received":
                 content = "订单 " + orderNo + " 交易已完成，感谢您的购买！";
                 title = "交易完成";
                 break;
@@ -80,7 +80,7 @@ public class MessageService {
                 content = "订单 " + orderNo + " 已发货，等待买家确认收货。买家签收后款项将自动到账。";
                 title = "已发货";
                 break;
-            case "completed":
+            case "received":
                 content = "订单 " + orderNo + " 交易已完成，款项已到账！感谢您的出售。";
                 title = "钱到账";
                 break;
@@ -117,5 +117,9 @@ public class MessageService {
     /** 获取用户的所有系统通知 */
     public ApiResult<List<Message>> myNotifications(Long userId) {
         return ApiResult.success(messageRepository.findByToUserIdOrderByCreatedAtDesc(userId));
+    }
+
+    public ApiResult<List<Long>> getConversationUserIds(Long userId) {
+        return ApiResult.success(messageRepository.findConversationUserIds(userId));
     }
 }

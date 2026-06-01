@@ -28,4 +28,9 @@ public class MessageController {
     public ApiResult<Long> unread(Authentication auth) {
         return messageService.unreadCount((Long) auth.getPrincipal());
     }
+
+    @GetMapping("/conversations")
+         public ApiResult<List<Long>> conversations(Authentication auth) {
+                 return messageService.getConversationUserIds((Long) auth.getPrincipal());
+         }
 }

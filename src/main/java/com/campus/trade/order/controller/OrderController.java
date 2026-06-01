@@ -55,7 +55,7 @@ public class OrderController {
      *   - status=pending & payStatus=unpaid → 显示「去支付」
      *   - status=paid（待发货）→ 买家显示「等待卖家发货」，卖家显示「发货」
      *   - status=shipped（已发货）→ 买家显示「签收」，卖家显示「已发货」
-     *   - status=completed（已完成）→ 显示「交易完成」
+     *   - status=received（已收货）→ 显示「交易完成」
      */
     @GetMapping("/{id}/detail")
     public ApiResult<OrderDetailVO> getOrderDetail(@PathVariable Long id, Authentication auth) {
@@ -73,7 +73,7 @@ public class OrderController {
 
     /**
      * 买家签收
-     * 状态变更：shipped（已发货）→ completed（已完成）
+     * 状态变更：shipped（已发货）→ received（已收货）
      */
     @PutMapping("/{id}/confirm")
     public ApiResult<Order> confirmOrder(@PathVariable Long id, Authentication auth) {

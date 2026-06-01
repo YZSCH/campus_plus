@@ -27,4 +27,7 @@ public interface MessageRepository extends JpaRepository<Message, Long> {
 
     /** 分页查询用户通知 */
     Page<Message> findByToUserIdOrderByCreatedAtDesc(Long toUserId, Pageable pageable);
+
+    @Query("SELECT DISTINCT CASE WHEN m.fromUserId = :uid THEN m.toUserId ELSE m.fromUserId END FROM Message m WHERE m.fromUserId = :uid OR m.toUserId = :uid")
+         List<Long> findConversationUserIds(@Param("uid") Long uid);
 }

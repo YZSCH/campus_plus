@@ -182,7 +182,7 @@ public class OrderService {
     // ==================== 买家签收 ====================
 
     /**
-     * 买家签收：将订单状态从 shipped（已发货）改为 completed（已完成）
+     * 买家签收：将订单状态从 shipped（已发货）改为 received（已收货）
      * 同时释放资金给卖家（担保交易完成）
      */
     @Transactional
@@ -202,15 +202,15 @@ public class OrderService {
             return ApiResult.error(400, "当前订单状态不允许签收");
         }
 
-        order.setStatus("completed");
+        order.setStatus("received");
         orderRepository.save(order);
 
         // 担保交易：订单完成后，释放资金给卖家
         walletService.releaseFunds(orderId);
 
         // 发送系统通知
-        messageService.notifyBuyer(order.getBuyerId(), "completed", order.getOrderNo(), order.getGoodsId());
-        messageService.notifySeller(order.getSellerId(), "completed", order.getOrderNo(), order.getGoodsId());
+        messageService.notifyBuyer(order.getBuyerId(), "received", order.getOrderNo(), order.getGoodsId());
+        messageService.notifySeller(order.getSellerId(), "received", order.getOrderNo(), order.getGoodsId());
 
         return ApiResult.success("签收成功，交易完成", order);
     }

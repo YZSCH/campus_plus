@@ -273,12 +273,27 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
 
 <script>
 const API='http://localhost:8080';
+
+const BANNED_WORDS=['毒品','赌','色情','暴力','诈骗','黑客','枪支','武器','假币','走私','作弊','替考','作弊器','枪','刀','炸弹','病毒','木马','钓鱼']
+function checkBannedWords(text){
+   for(var i=0;i<BANNED_WORDS.length;i++){
+     if(text.indexOf(BANNED_WORDS[i])!==-1){
+       return BANNED_WORDS[i]
+     }
+   }
+   return null
+}
+
 function T(){return localStorage.getItem('token')}
 function U(){try{return JSON.parse(localStorage.getItem('user'))}catch(e){return null}}
 function setLogin(t,u){localStorage.setItem('token',t);localStorage.setItem('user',JSON.stringify(u));closeModal('loginModal');closeModal('registerModal');switchTab('profile');renderProfile()}
 function closeModal(i){document.getElementById(i).classList.remove('active')}
 function openModal(i){document.getElementById(i).classList.add('active')}
 function switchTab(n){
+  if(document.getElementById('chatOverlay').style.display==='flex'){
+      closeChatOverlay()
+  }
+
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'))
   document.getElementById('page-'+n).classList.add('active')
   document.querySelectorAll('.ti').forEach(t=>t.classList.remove('active'))
@@ -292,7 +307,7 @@ function switchTab(n){
   if(n==='arbitration')renderArbitration()
   if(n==='admin-arbitration')renderAdminArbitration()
   if(n==='admin-violation')renderAdminViolation()
-  if(n==='message'){closeChatOverlay();loadConvs()}
+  if(n==='message')loadConvs()
 }
 
 // GOODS
@@ -402,7 +417,14 @@ async function loadChatMsgs(){
 }
 function sendChatMsg(){
   const input=document.getElementById('chatInput');const c=input.value.trim()
-  if(!c||!chatTarget)return;input.value=''
+if(!c||!chatTarget)return
+   var banned=checkBannedWords(c)
+   if(banned){
+       alert('⚠️ 消息包含违禁词"'+banned+'"，请修改后发送')
+     return
+   }
+   input.value=''
+
   fetch(`${API}/api/message/send`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+T()},body:JSON.stringify({toUserId:parseInt(chatTarget),content:c,goodsId:chatGoodsId?parseInt(chatGoodsId):null})}).then(r=>r.json()).then(()=>setTimeout(loadChatMsgs,300)).catch(()=>{})
 }
 async function createOrderFromChat(){
@@ -426,18 +448,13 @@ async function loadConvs(){
   const u=U()
   if(!u){document.getElementById('convList').innerHTML='<div class="empty"><div class="ea">💬</div><h3>请先登录</h3></div>';return}
   try{
-    const r=await fetch(`${API}/api/goods/list?page=0&size=100`)
-    const d=await r.json()
-    if(d.code===200&&d.data&&d.data.content){
+ const r=await fetch(`${API}/api/goods/list?page=0&size=100`)
+ const d=await r.json()
+     if(d.code===200&&d.data&&d.data.content){
       const sellers=[...new Set(d.data.content.filter(g=>g.userId!=u.userId).map(g=>g.userId))]
       if(!sellers.length){document.getElementById('convList').innerHTML='<div class="empty"><div class="ea">💬</div><h3>暂无消息</h3></div>';return}
       Promise.all(sellers.map(sid=>fetch(`${API}/api/user/info/${sid}`,{headers:{'Authorization':'Bearer '+T()}}).then(r=>r.json()).then(d=>{const n=d.code===200&&d.data?d.data.username:'用户'+sid;return`<div class="citem" onclick="chatTarget=${sid};chatGoodsId=null;chatGoodsTitle='';openChatOverlay()"><div class="ca">👤</div><div class="ci"><div class="cn">${n}</div><div class="cp">点击开始聊天</div></div></div>`}).catch(()=>''))).then(items=>{document.getElementById('convList').innerHTML=items.join('')||'<div class="empty"><div class="ea">💬</div><h3>暂无消息</h3></div>'})
-    }
-  }catch(e){}
-  try{
-    const r=await fetch(`${API}/api/message/unread`,{headers:{'Authorization':'Bearer '+T()}})
-    const d=await r.json()
-    if(d.code===200&&d.data>0){document.getElementById('unreadBadge').style.display='block';document.getElementById('unreadBadge').textContent=d.data}else{document.getElementById('unreadBadge').style.display='none'}
+     }
   }catch(e){}
 }
 
@@ -446,6 +463,18 @@ async function publishGoods(){
   const u=U();if(!u){openModal('loginModal');return}
   const d={title:document.getElementById('pubTitle').value,category:document.getElementById('pubCategory').value,price:document.getElementById('pubPrice').value,description:document.getElementById('pubDesc').value,contactPhone:document.getElementById('pubPhone').value,wechat:document.getElementById('pubWechat').value,location:document.getElementById('pubLocation').value}
   if(!d.title||!d.price){alert('请填写标题和价格');return}
+  var checkFields=['标题','描述','详细信息']
+  var checkValues=[d.title,d.description,d.descriptionDetail]
+  for(var i=0;i<checkFields.length;i++){
+     if(checkValues[i]){
+       var banned=checkBannedWords(checkValues[i])
+       if(banned){
+         document.getElementById('pubAlert').className='alert e'
+         document.getElementById('pubAlert').textContent='⚠️ '+checkFields[i]+'包含违禁词"'+banned+'"，请修改后发布'
+       }
+     }
+  }
+
   try{
     const r=await fetch(`${API}/api/goods/create`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+T()},body:JSON.stringify(d)})
     const rd=await r.json()
@@ -503,7 +532,29 @@ async function renderOrders(){
       el.innerHTML=d.data.content.map(o=>{
         const sm={pending:'待处理',paid:'已付款',shipped:'已发货',received:'已收货',cancelled:'已取消'}
         const tc=o.status==='pending'?'y':o.status==='cancelled'?'r':'g'
-        return `<div class="gc" onclick="showOrderDetail(${o.id})" style="cursor:pointer"><div class="gci" style="padding:12px 14px"><div class="ginfo"><div class="gtitle" style="font-size:13px">订单 ${o.orderNo}</div><div class="gprice" style="font-size:16px">¥${o.totalPrice||'0.00'}</div><div class="gmeta">状态: <span class="tag ${tc}">${sm[o.status]||o.status}</span><span style="margin-left:auto;color:var(--muted);font-size:12px">点击查看详情 →</span></div></div></div></div>`
+        const isBuyer=ordTab==='buy'
+        
+        // 构建操作按钮
+        let actionBtns=''
+        if(isBuyer && o.status==='shipped'){
+          actionBtns=`<button class="btn btn-primary" onclick="event.stopPropagation();confirmOrder(${o.id})" style="padding:6px 14px;font-size:13px">确认收货</button>`
+        }else if(isBuyer && o.status==='received'){
+          actionBtns=`<button class="btn btn-primary" onclick="event.stopPropagation();openEvalForm(${o.id})" style="padding:6px 14px;font-size:13px">评价</button>`
+        }
+        
+        return `<div class="gc" onclick="showOrderDetail(${o.id})" style="cursor:pointer">
+          <div class="gci" style="padding:12px 14px;position:relative">
+            <div class="ginfo">
+              <div class="gtitle" style="font-size:13px;margin-bottom:6px">订单 ${o.orderNo}</div>
+              <div class="gprice" style="font-size:16px;margin-bottom:6px">¥${o.totalPrice||'0.00'}</div>
+              <span class="tag ${tc}" style="padding:4px 12px;font-size:12px">${sm[o.status]||o.status}</span>
+              <div style="position:absolute;right:14px;bottom:12px;display:flex;gap:8px;align-items:center">
+                ${actionBtns}
+                <span style="color:var(--muted);font-size:12px">详情 →</span>
+              </div>
+            </div>
+          </div>
+        </div>`
       }).join('')
     }else{el.innerHTML='<div class="empty"><div class="ea">📋</div><h3>暂无订单</h3></div>'}
   }catch(e){el.innerHTML='<div class="empty"><div class="ea">😶</div><h3>加载失败</h3></div>'}
@@ -515,7 +566,7 @@ async function showOrderDetail(id){
     const d=await r.json()
     if(d.code!==200||!d.data){alert('加载详情失败');return}
     const v=d.data,o=v.order,g=v.goods,s=v.seller
-    const sm={pending:'待处理',paid:'待发货',shipped:'已发货',completed:'已完成',cancelled:'已取消'}
+    const sm={pending:'待处理',paid:'待发货',shipped:'已发货',received:'已收货',cancelled:'已取消'}
     const pm={unpaid:'未支付',paid:'已支付'}
     const tc=o.status==='pending'?'y':o.status==='cancelled'?'r':'g'
     let actions=''
@@ -526,7 +577,13 @@ async function showOrderDetail(id){
       actions=`<button class="btn btn-primary" onclick="shipOrder(${o.id})">📦 发货</button>`
     }else if(o.status==='shipped'&&isBuyer){
       actions=`<button class="btn btn-primary" onclick="confirmOrder(${o.id})">✅ 签收</button>`
-    }else if(o.status==='completed'){
+    }else if(o.status==='received'&&isBuyer){
+      // 已收货，买家显示评价和查看评价按钮
+      actions=`<div style="display:flex;gap:10px"><button class="btn btn-primary" onclick="openEvalForm(${o.id})">⭐ 评价</button><button class="btn btn-outline" onclick="showUserEvaluations(${o.sellerId})">📝 查看评价</button></div>`
+    }else if(o.status==='received'&&isSeller){
+      // 卖家显示查看评价按钮
+      actions=`<button class="btn btn-outline" onclick="showUserEvaluations(${o.buyerId})">📝 查看买家评价</button>`
+    }else if(o.status==='received'){
       actions=`<div style="padding:10px 14px;border-radius:10px;background:var(--ivory);color:var(--muted);font-size:13px;text-align:center">交易已完成</div>`
     }else{
       actions=`<div style="padding:10px 14px;border-radius:10px;background:var(--ivory);color:var(--muted);font-size:13px;text-align:center">${sm[o.status]||o.status}</div>`
@@ -545,7 +602,7 @@ async function showOrderDetail(id){
       </div>
       <div style="display:flex;gap:10px;margin-bottom:10px">
         <div style="flex:1;background:var(--ivory);border-radius:12px;padding:14px;text-align:center">
-          <div style="font-size:13px;color:var(--muted)">订单状态</div><div style="font-size:15px;font-weight:600;margin-top:4px" class="tag ${tc}">${sm[o.status]||o.status}</div>
+          <div style="font-size:13px;color:var(--muted)">订单状态</div><div style="font-size:15px;font-weight:600;margin-top:4px"><span class="tag ${tc}" style="padding:4px 12px;font-size:12px">${sm[o.status]||o.status}</span></div>
         </div>
         <div style="flex:1;background:var(--ivory);border-radius:12px;padding:14px;text-align:center">
           <div style="font-size:13px;color:var(--muted)">支付状态</div><div style="font-size:15px;font-weight:600;margin-top:4px">${pm[o.payStatus]||o.payStatus}</div>
@@ -603,6 +660,100 @@ async function confirmOrder(id){
 }
 async function updateOrder(id,s){
   try{const r=await fetch(`${API}/api/order/${id}/status?status=${s}`,{method:'PUT',headers:{'Authorization':'Bearer '+T()}});const d=await r.json();if(d.code===200)renderOrders();else alert('操作失败')}catch(e){alert('网络错误')}
+}
+
+// EVALUATION
+function openEvalForm(orderId){
+  const u=U();if(!u){openModal('loginModal');return}
+  document.getElementById('detailContent').innerHTML=`
+    <div class="mi"></div>
+    <div class="mt">⭐ 发表评价</div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:14px;font-weight:600;margin-bottom:8px;color:var(--charcoal)">评分</label>
+      <select id="evalRating" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:10px;font-size:14px">
+        <option value="5">⭐⭐⭐⭐⭐ 非常满意（5分）</option>
+        <option value="4">⭐⭐⭐⭐ 满意（4分）</option>
+        <option value="3">⭐⭐⭐ 一般（3分）</option>
+        <option value="2">⭐⭐ 不满意（2分）</option>
+        <option value="1">⭐ 非常不满意（1分）</option>
+      </select>
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:14px;font-weight:600;margin-bottom:8px;color:var(--charcoal)">评价内容</label>
+      <textarea id="evalContent" rows="4" maxlength="500" placeholder="请输入评价内容（最多500字）" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:10px;font-size:14px;resize:vertical"></textarea>
+    </div>
+    <div style="margin-bottom:16px">
+      <label style="display:block;font-size:14px;font-weight:600;margin-bottom:8px;color:var(--charcoal)">图片（选填）</label>
+      <input type="text" id="evalImages" placeholder="请输入图片URL，多个用逗号分隔" style="width:100%;padding:10px;border:2px solid var(--border);border-radius:10px;font-size:14px">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="submitEval(${orderId})" style="flex:1">提交评价</button>
+      <button class="btn btn-outline" onclick="closeModal('detailModal')" style="flex:1">取消</button>
+    </div>
+  `
+  openModal('detailModal')
+}
+
+async function submitEval(orderId){
+  const u=U();if(!u){openModal('loginModal');return}
+  const rating=parseInt(document.getElementById('evalRating').value)
+  const content=document.getElementById('evalContent').value.trim()
+  const images=document.getElementById('evalImages').value.trim()
+  
+  if(!content){alert('请输入评价内容');return}
+  if(content.length>500){alert('评价内容不能超过500字');return}
+  
+  try{
+    const r=await fetch(`${API}/api/evaluation/create`,{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+T()},
+      body:JSON.stringify({
+        orderId:orderId,
+        rating:rating,
+        content:content,
+        images:images||null
+      })
+    })
+    const d=await r.json()
+    if(d.code===200){
+      alert('✅ 评价成功！')
+      closeModal('detailModal')
+      renderOrders()
+    }else{
+      alert('❌ '+(d.message||'评价失败'))
+    }
+  }catch(e){
+    alert('❌ 网络错误')
+  }
+}
+
+async function showUserEvaluations(userId){
+  const u=U();if(!u){openModal('loginModal');return}
+  try{
+    const r=await fetch(`${API}/api/evaluation/user/${userId}?page=0&size=50`,{headers:{'Authorization':'Bearer '+T()}})
+    const d=await r.json()
+    if(d.code===200&&d.data&&d.data.content&&d.data.content.length>0){
+      const h=d.data.content.map(e=>{
+        const stars='⭐'.repeat(e.rating)
+        return `<div style="background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-size:16px">${stars}</div>
+            <div style="font-size:12px;color:var(--muted)">${new Date(e.createdAt).toLocaleDateString('zh-CN')}</div>
+          </div>
+          <div style="font-size:14px;color:var(--charcoal);line-height:1.6">${e.content}</div>
+          ${e.images?`<div style="margin-top:8px;font-size:12px;color:var(--muted)">📷 ${e.images}</div>`:''}
+        </div>`
+      }).join('')
+      document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="mt">📝 收到的评价</div>${h}<button class="btn btn-outline" onclick="closeModal('detailModal')" style="margin-top:12px">关闭</button>`
+      openModal('detailModal')
+    }else{
+      document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="mt">📝 收到的评价</div><div class="empty"><div class="ea"></div><h3>暂无评价</h3></div><button class="btn btn-outline" onclick="closeModal('detailModal')" style="margin-top:12px">关闭</button>`
+      openModal('detailModal')
+    }
+  }catch(e){
+    console.error('加载评价失败:', e)
+    alert('加载评价失败')
+  }
 }
 
 // PROFILE
