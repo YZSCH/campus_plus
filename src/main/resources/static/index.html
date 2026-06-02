@@ -191,7 +191,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
 
 <!-- ADMIN VIOLATION PAGE -->
 <div id="page-admin-violation" class="page">
-  <div class="page-header"><h1>违规管理</h1></div>
+  <div class="page-header"><h1>违规管理</h1><button onclick="openCreateViolationModal()" style="padding:8px 16px;border:none;border-radius:10px;background:var(--rose);color:#fff;font-size:13px;font-weight:600;cursor:pointer">➕ 录入违规</button></div>
   <div class="otab" id="adminViolationTabBar"><div class="ot active" onclick="switchAdminViolationTab('all',this)">全部违规</div><div class="ot" onclick="switchAdminViolationTab('pending',this)">待处理</div></div>
   <div class="olist" id="adminViolationList"></div>
 </div>
@@ -1438,8 +1438,597 @@ async function handleArbitration(id){
 }
 
 // ADMIN VIOLATION
-function switchAdminViolationTab(tab,el){/* 违规管理功能暂未实现 */}
-async function renderAdminViolation(){/* 违规管理功能暂未实现 */}
+let adminViolationTab = 'all'
+function switchAdminViolationTab(tab,el){
+  adminViolationTab = tab
+  document.querySelectorAll('#adminViolationTabBar .ot').forEach(t=>t.classList.remove('active'))
+  el.classList.add('active')
+  renderAdminViolation()
+}
+async function renderAdminViolation(){
+  const el = document.getElementById('adminViolationList')
+  el.innerHTML = '<div class="spinner"></div>'
+  try{
+    const status = adminViolationTab === 'pending' ? 0 : null
+    let url = `${API}/api/admin/violation?page=0&size=20`
+    if(status !== null) url += `&status=${status}`
+    const r = await fetch(url, {headers:{'Authorization':'Bearer '+T()}})
+    const d = await r.json()
+    if(d.code === 200 && d.data && d.data.content){
+      if(!d.data.content.length){
+        el.innerHTML = '<div class="empty"><div class="ea">⚠️</div><h3>暂无违规记录</h3></div>'
+        return
+      }
+      el.innerHTML = d.data.content.map(v=>{
+        const statusMap = {0:'待处理', 1:'已处理', 2:'已撤销'}
+        const typeMap = {SPAM:'垃圾信息', FRAUD:'欺诈', ABUSE:'滥用', OTHER:'其他'}
+        const levelMap = {LIGHT:'轻微', MEDIUM:'中等', SEVERE:'严重'}
+        const statusColor = v.status === 0 ? 'y' : v.status === 1 ? 'g' : 'r'
+        return `<div class="gc" onclick="showViolationDetail(${v.id})" style="cursor:pointer">
+          <div class="gci" style="padding:14px">
+            <div class="ginfo">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+                <span style="font-size:15px;font-weight:600">${typeMap[v.violationType] || v.violationType}</span>
+                <span class="tag ${statusColor}">${statusMap[v.status]}</span>
+              </div>
+              <div style="font-size:13px;color:var(--muted);margin-bottom:4px">用户ID: ${v.userId} | 等级: ${levelMap[v.violationLevel] || v.violationLevel}</div>
+              <div style="font-size:14px;color:var(--charcoal);line-height:1.5">${v.description || '暂无描述'}</div>
+              <div style="font-size:12px;color:var(--muted);margin-top:4px">
+                ${v.createdAt ? new Date(v.createdAt).toLocaleDateString('zh-CN') : '-'}
+                ${v.handledAt ? ' | 处理于 '+new Date(v.handledAt).toLocaleDateString('zh-CN') : ''}
+              </div>
+            </div>
+          </div>
+        </div>`
+      }).join('')
+    }else{
+      el.innerHTML = '<div class="empty"><div class="ea">⚠️</div><h3>暂无违规记录</h3></div>'
+    }
+  }catch(e){
+    console.error('加载违规记录失败:', e)
+    el.innerHTML = '<div class="empty"><div class="ea">😶</div><h3>加载失败</h3></div>'
+  }
+}
+
+async function showViolationDetail(id){
+  try{
+    const r = await fetch(`${API}/api/admin/violation/${id}`, {headers:{'Authorization':'Bearer '+T()}})
+    const d = await r.json()
+    if(d.code !== 200 || !d.data){
+      alert('加载详情失败')
+      return
+    }
+    const v = d.data
+    const statusMap = {0:'待处理', 1:'已处理', 2:'已撤销'}
+    const typeMap = {SPAM:'垃圾信息', FRAUD:'欺诈', ABUSE:'滥用', OTHER:'其他'}
+    const levelMap = {LIGHT:'轻微', MEDIUM:'中等', SEVERE:'严重'}
+    const methodMap = {WARNING:'警告', DEDUCT_CREDIT:'扣除信用分', BAN_TEMP:'临时封禁', BAN_PERMANENT:'永久封禁'}
+    const statusColor = v.status === 0 ? 'y' : v.status === 1 ? 'g' : 'r'
+    
+    let actions = ''
+    if(v.status === 0){
+      actions = `<button class="btn btn-primary" onclick="openHandleViolationModal(${v.id})">⚡ 处理违规</button>`
+    }else if(v.status === 1){
+      actions = `<button class="btn btn-outline" onclick="cancelViolation(${v.id})">🔄 撤销处理</button>`
+    }
+    
+    const h = `<div class="mi"></div>
+      <div class="mt">⚠️ 违规详情</div>
+      <div style="background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px">违规类型</div>
+        <div style="font-size:16px;font-weight:600">${typeMap[v.violationType] || v.violationType}</div>
+      </div>
+      <div style="background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px">违规等级</div>
+        <div style="font-size:16px;font-weight:600">${levelMap[v.violationLevel] || v.violationLevel}</div>
+      </div>
+      <div style="background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px">违规描述</div>
+        <div style="font-size:14px">${v.description || '暂无描述'}</div>
+      </div>
+      <div style="background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px">关联用户</div>
+        <div style="font-size:14px">用户ID: ${v.userId}</div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:10px">
+        <div style="flex:1;background:var(--ivory);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:13px;color:var(--muted)">状态</div>
+          <div style="font-size:15px;font-weight:600;margin-top:4px"><span class="tag ${statusColor}">${statusMap[v.status]}</span></div>
+        </div>
+        <div style="flex:1;background:var(--ivory);border-radius:12px;padding:14px;text-align:center">
+          <div style="font-size:13px;color:var(--muted)">扣除信用分</div>
+          <div style="font-size:15px;font-weight:600;margin-top:4px">${v.deductPoints || 0}</div>
+        </div>
+      </div>
+      ${v.status === 1 && v.handleMethod ? `<div style="background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px">处理方式</div>
+        <div style="font-size:14px;font-weight:600">${methodMap[v.handleMethod] || v.handleMethod}</div>
+        ${v.banUntil ? `<div style="font-size:13px;color:var(--muted);margin-top:4px">封禁截止: ${new Date(v.banUntil).toLocaleString('zh-CN')}</div>` : ''}
+      </div>` : ''}
+      ${actions ? `<div style="margin-bottom:10px">${actions}</div>` : ''}
+      <button class="btn btn-outline" onclick="closeModal('detailModal')">关闭</button>`
+    
+    document.getElementById('detailContent').innerHTML = h
+    openModal('detailModal')
+  }catch(e){
+    console.error('加载违规详情失败:', e)
+    alert('加载失败')
+  }
+}
+
+function openHandleViolationModal(id){
+  closeModal('detailModal')
+  const h = `<div class="mi"></div>
+    <div class="mt">⚡ 处理违规</div>
+    <div id="handleViolationAlert" class="alert"></div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">处理方式</label>
+      <select id="handleMethod" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+        <option value="WARNING">⚠️ 警告</option>
+        <option value="DEDUCT_CREDIT">📉 扣除信用分</option>
+        <option value="BAN_TEMP">⏱️ 临时封禁</option>
+        <option value="BAN_PERMANENT">🔒 永久封禁</option>
+      </select>
+    </div>
+    <div id="deductPointsArea" style="display:none;margin-bottom:16px">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">扣除分数</label>
+      <input type="number" id="deductPoints" min="1" max="100" placeholder="输入扣除的信用分数" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+    </div>
+    <div id="banUntilArea" style="display:none;margin-bottom:16px">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">封禁截止时间</label>
+      <input type="datetime-local" id="banUntil" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="handleViolation(${id})" style="flex:1">确认处理</button>
+      <button class="btn btn-outline" onclick="closeModal('detailModal')" style="flex:1">取消</button>
+    </div>`
+  
+  document.getElementById('detailContent').innerHTML = h
+  openModal('detailModal')
+  
+  // 添加处理方式切换事件
+  document.getElementById('handleMethod').addEventListener('change', function(){
+    const method = this.value
+    document.getElementById('deductPointsArea').style.display = method === 'DEDUCT_CREDIT' ? 'block' : 'none'
+    document.getElementById('banUntilArea').style.display = method === 'BAN_TEMP' ? 'block' : 'none'
+  })
+}
+
+async function handleViolation(id){
+  const method = document.getElementById('handleMethod').value
+  let deductPoints = 0
+  let banUntil = null
+  
+  if(method === 'DEDUCT_CREDIT'){
+    deductPoints = parseInt(document.getElementById('deductPoints').value)
+    if(!deductPoints || deductPoints <= 0){
+      document.getElementById('handleViolationAlert').className = 'alert e'
+      document.getElementById('handleViolationAlert').textContent = '请输入有效的扣分数量'
+      return
+    }
+  }
+  
+  if(method === 'BAN_TEMP'){
+    const banStr = document.getElementById('banUntil').value
+    if(!banStr){
+      document.getElementById('handleViolationAlert').className = 'alert e'
+      document.getElementById('handleViolationAlert').textContent = '请选择封禁截止时间'
+      return
+    }
+    banUntil = new Date(banStr).toISOString()
+  }
+  
+  try{
+    const r = await fetch(`${API}/api/admin/violation/${id}/handle`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+T()},
+      body: JSON.stringify({
+        handleMethod: method,
+        deductPoints: deductPoints,
+        banUntil: banUntil
+      })
+    })
+    const d = await r.json()
+    if(d.code === 200){
+      document.getElementById('handleViolationAlert').className = 'alert s'
+      document.getElementById('handleViolationAlert').textContent = '✅ 处理成功'
+      setTimeout(() => {
+        closeModal('detailModal')
+        renderAdminViolation()
+      }, 1000)
+    }else{
+      document.getElementById('handleViolationAlert').className = 'alert e'
+      document.getElementById('handleViolationAlert').textContent = '❌ '+(d.message || '处理失败')
+    }
+  }catch(e){
+    document.getElementById('handleViolationAlert').className = 'alert e'
+    document.getElementById('handleViolationAlert').textContent = '❌ 网络错误'
+  }
+}
+
+async function cancelViolation(id){
+  if(!confirm('确定要撤销这条违规处理吗？')) return
+  try{
+    const r = await fetch(`${API}/api/admin/violation/${id}/cancel`, {
+      method: 'POST',
+      headers: {'Authorization':'Bearer '+T()}
+    })
+    const d = await r.json()
+    if(d.code === 200){
+      alert('✅ 已撤销')
+      closeModal('detailModal')
+      renderAdminViolation()
+    }else{
+      alert('❌ '+(d.message || '撤销失败'))
+    }
+  }catch(e){
+    alert('❌ 网络错误')
+  }
+}
+
+function openCreateViolationModal(){
+  const h = `<div class="mi"></div>
+    <div class="mt">➕ 录入违规记录</div>
+    <div id="createViolationAlert" class="alert"></div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规用户ID</label>
+      <input type="number" id="cvUserId" placeholder="输入违规用户的ID" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规类型</label>
+      <select id="cvType" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+        <option value="SPAM">📢 垃圾信息</option>
+        <option value="FRAUD">🕵️ 欺诈行为</option>
+        <option value="ABUSE">💢 滥用行为</option>
+        <option value="OTHER">📎 其他</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规等级</label>
+      <select id="cvLevel" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+        <option value="LIGHT">🌱 轻微</option>
+        <option value="MEDIUM">⚠️ 中等</option>
+        <option value="SEVERE">🔴 严重</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规描述</label>
+      <textarea id="cvDesc" placeholder="请详细描述违规行为..." rows="4" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory);resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">证据材料（选填）</label>
+      <input type="text" id="cvEvidence" placeholder="证据截图链接或说明，JSON格式" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="createViolationRecord()" style="flex:1">确认录入</button>
+      <button class="btn btn-outline" onclick="closeModal('detailModal')" style="flex:1">取消</button>
+    </div>`
+  
+  document.getElementById('detailContent').innerHTML = h
+  openModal('detailModal')
+}
+
+async function createViolationRecord(){
+  const userId = parseInt(document.getElementById('cvUserId').value)
+  const violationType = document.getElementById('cvType').value
+  const violationLevel = document.getElementById('cvLevel').value
+  const description = document.getElementById('cvDesc').value.trim()
+  const evidence = document.getElementById('cvEvidence').value.trim()
+  
+  if(!userId || userId <= 0){
+    document.getElementById('createViolationAlert').className = 'alert e'
+    document.getElementById('createViolationAlert').textContent = '请输入有效的用户ID'
+    return
+  }
+  
+  if(!description){
+    document.getElementById('createViolationAlert').className = 'alert e'
+    document.getElementById('createViolationAlert').textContent = '请填写违规描述'
+    return
+  }
+  
+  try{
+    const r = await fetch(`${API}/api/admin/violation`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+T()},
+      body: JSON.stringify({
+        userId: userId,
+        violationType: violationType,
+        violationLevel: violationLevel,
+        description: description,
+        evidence: evidence || null
+      })
+    })
+    const d = await r.json()
+    if(d.code === 200){
+      document.getElementById('createViolationAlert').className = 'alert s'
+      document.getElementById('createViolationAlert').textContent = '✅ 录入成功'
+      setTimeout(() => {
+        closeModal('detailModal')
+        renderAdminViolation()
+      }, 1000)
+    }else{
+      document.getElementById('createViolationAlert').className = 'alert e'
+      document.getElementById('createViolationAlert').textContent = '❌ '+(d.message || '录入失败')
+    }
+  }catch(e){
+    document.getElementById('createViolationAlert').className = 'alert e'
+    document.getElementById('createViolationAlert').textContent = '❌ 网络错误'
+  }
+}
+
+function openCreateViolationModal(){
+  const h = `<div class="mi"></div>
+    <div class="mt">➕ 录入违规记录</div>
+    <div id="createViolationAlert" class="alert"></div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规用户ID</label>
+      <input type="number" id="cvUserId" placeholder="输入违规用户的ID" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规类型</label>
+      <select id="cvType" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+        <option value="SPAM">📢 垃圾信息</option>
+        <option value="FRAUD">🕵️ 欺诈行为</option>
+        <option value="ABUSE">💢 滥用行为</option>
+        <option value="OTHER">📎 其他</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规等级</label>
+      <select id="cvLevel" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+        <option value="LIGHT">🌱 轻微</option>
+        <option value="MEDIUM">⚠️ 中等</option>
+        <option value="SEVERE">🔴 严重</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规描述</label>
+      <textarea id="cvDesc" placeholder="请详细描述违规行为..." rows="4" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory);resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">证据材料（选填）</label>
+      <input type="text" id="cvEvidence" placeholder="证据截图链接或说明，JSON格式" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="createViolationRecord()" style="flex:1">确认录入</button>
+      <button class="btn btn-outline" onclick="closeModal('detailModal')" style="flex:1">取消</button>
+    </div>`
+  
+  document.getElementById('detailContent').innerHTML = h
+  openModal('detailModal')
+}
+
+async function createViolationRecord(){
+  const userId = parseInt(document.getElementById('cvUserId').value)
+  const violationType = document.getElementById('cvType').value
+  const violationLevel = document.getElementById('cvLevel').value
+  const description = document.getElementById('cvDesc').value.trim()
+  const evidence = document.getElementById('cvEvidence').value.trim()
+  
+  if(!userId || userId <= 0){
+    document.getElementById('createViolationAlert').className = 'alert e'
+    document.getElementById('createViolationAlert').textContent = '请输入有效的用户ID'
+    return
+  }
+  
+  if(!description){
+    document.getElementById('createViolationAlert').className = 'alert e'
+    document.getElementById('createViolationAlert').textContent = '请填写违规描述'
+    return
+  }
+  
+  try{
+    const r = await fetch(`${API}/api/admin/violation`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+T()},
+      body: JSON.stringify({
+        userId: userId,
+        violationType: violationType,
+        violationLevel: violationLevel,
+        description: description,
+        evidence: evidence || null
+      })
+    })
+    const d = await r.json()
+    if(d.code === 200){
+      document.getElementById('createViolationAlert').className = 'alert s'
+      document.getElementById('createViolationAlert').textContent = '✅ 录入成功'
+      setTimeout(() => {
+        closeModal('detailModal')
+        renderAdminViolation()
+      }, 1000)
+    }else{
+      document.getElementById('createViolationAlert').className = 'alert e'
+      document.getElementById('createViolationAlert').textContent = '❌ '+(d.message || '录入失败')
+    }
+  }catch(e){
+    document.getElementById('createViolationAlert').className = 'alert e'
+    document.getElementById('createViolationAlert').textContent = '❌ 网络错误'
+  }
+}
+
+function openCreateViolationModal(){
+  const h = `<div class="mi"></div>
+    <div class="mt">➕ 录入违规记录</div>
+    <div id="createViolationAlert" class="alert"></div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规用户ID</label>
+      <input type="number" id="cvUserId" placeholder="输入违规用户的ID" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规类型</label>
+      <select id="cvType" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+        <option value="SPAM">📢 垃圾信息</option>
+        <option value="FRAUD">🕵️ 欺诈行为</option>
+        <option value="ABUSE">💢 滥用行为</option>
+        <option value="OTHER">📎 其他</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规等级</label>
+      <select id="cvLevel" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+        <option value="LIGHT">🌱 轻微</option>
+        <option value="MEDIUM">⚠️ 中等</option>
+        <option value="SEVERE">🔴 严重</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规描述</label>
+      <textarea id="cvDesc" placeholder="请详细描述违规行为..." rows="4" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory);resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">证据材料（选填）</label>
+      <input type="text" id="cvEvidence" placeholder="证据截图链接或说明，JSON格式" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="createViolationRecord()" style="flex:1">确认录入</button>
+      <button class="btn btn-outline" onclick="closeModal('detailModal')" style="flex:1">取消</button>
+    </div>`
+  
+  document.getElementById('detailContent').innerHTML = h
+  openModal('detailModal')
+}
+
+async function createViolationRecord(){
+  const userId = parseInt(document.getElementById('cvUserId').value)
+  const violationType = document.getElementById('cvType').value
+  const violationLevel = document.getElementById('cvLevel').value
+  const description = document.getElementById('cvDesc').value.trim()
+  const evidence = document.getElementById('cvEvidence').value.trim()
+  
+  if(!userId || userId <= 0){
+    document.getElementById('createViolationAlert').className = 'alert e'
+    document.getElementById('createViolationAlert').textContent = '请输入有效的用户ID'
+    return
+  }
+  
+  if(!description){
+    document.getElementById('createViolationAlert').className = 'alert e'
+    document.getElementById('createViolationAlert').textContent = '请填写违规描述'
+    return
+  }
+  
+  try{
+    const r = await fetch(`${API}/api/admin/violation`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+T()},
+      body: JSON.stringify({
+        userId: userId,
+        violationType: violationType,
+        violationLevel: violationLevel,
+        description: description,
+        evidence: evidence || null
+      })
+    })
+    const d = await r.json()
+    if(d.code === 200){
+      document.getElementById('createViolationAlert').className = 'alert s'
+      document.getElementById('createViolationAlert').textContent = '✅ 录入成功'
+      setTimeout(() => {
+        closeModal('detailModal')
+        renderAdminViolation()
+      }, 1000)
+    }else{
+      document.getElementById('createViolationAlert').className = 'alert e'
+      document.getElementById('createViolationAlert').textContent = '❌ '+(d.message || '录入失败')
+    }
+  }catch(e){
+    document.getElementById('createViolationAlert').className = 'alert e'
+    document.getElementById('createViolationAlert').textContent = '❌ 网络错误'
+  }
+}
+
+function openCreateViolationModal(){
+  const h = `<div class="mi"></div>
+    <div class="mt">➕ 录入违规记录</div>
+    <div id="createViolationAlert" class="alert"></div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规用户ID</label>
+      <input type="number" id="cvUserId" placeholder="输入违规用户的ID" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规类型</label>
+      <select id="cvType" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+        <option value="SPAM">📢 垃圾信息</option>
+        <option value="FRAUD">🕵️ 欺诈行为</option>
+        <option value="ABUSE">💢 滥用行为</option>
+        <option value="OTHER">📎 其他</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规等级</label>
+      <select id="cvLevel" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+        <option value="LIGHT">🌱 轻微</option>
+        <option value="MEDIUM">⚠️ 中等</option>
+        <option value="SEVERE">🔴 严重</option>
+      </select>
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">违规描述</label>
+      <textarea id="cvDesc" placeholder="请详细描述违规行为..." rows="4" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory);resize:vertical;font-family:inherit"></textarea>
+    </div>
+    <div class="fg">
+      <label style="font-size:13px;color:var(--muted);margin-bottom:8px;display:block">证据材料（选填）</label>
+      <input type="text" id="cvEvidence" placeholder="证据截图链接或说明，JSON格式" style="width:100%;padding:12px;border:2px solid var(--border);border-radius:11px;font-size:15px;background:var(--ivory)">
+    </div>
+    <div style="display:flex;gap:10px">
+      <button class="btn btn-primary" onclick="createViolationRecord()" style="flex:1">确认录入</button>
+      <button class="btn btn-outline" onclick="closeModal('detailModal')" style="flex:1">取消</button>
+    </div>`
+  
+  document.getElementById('detailContent').innerHTML = h
+  openModal('detailModal')
+}
+
+async function createViolationRecord(){
+  const userId = parseInt(document.getElementById('cvUserId').value)
+  const violationType = document.getElementById('cvType').value
+  const violationLevel = document.getElementById('cvLevel').value
+  const description = document.getElementById('cvDesc').value.trim()
+  const evidence = document.getElementById('cvEvidence').value.trim()
+  
+  if(!userId || userId <= 0){
+    document.getElementById('createViolationAlert').className = 'alert e'
+    document.getElementById('createViolationAlert').textContent = '请输入有效的用户ID'
+    return
+  }
+  
+  if(!description){
+    document.getElementById('createViolationAlert').className = 'alert e'
+    document.getElementById('createViolationAlert').textContent = '请填写违规描述'
+    return
+  }
+  
+  try{
+    const r = await fetch(`${API}/api/admin/violation`, {
+      method: 'POST',
+      headers: {'Content-Type':'application/json', 'Authorization':'Bearer '+T()},
+      body: JSON.stringify({
+        userId: userId,
+        violationType: violationType,
+        violationLevel: violationLevel,
+        description: description,
+        evidence: evidence || null
+      })
+    })
+    const d = await r.json()
+    if(d.code === 200){
+      document.getElementById('createViolationAlert').className = 'alert s'
+      document.getElementById('createViolationAlert').textContent = '✅ 录入成功'
+      setTimeout(() => {
+        closeModal('detailModal')
+        renderAdminViolation()
+      }, 1000)
+    }else{
+      document.getElementById('createViolationAlert').className = 'alert e'
+      document.getElementById('createViolationAlert').textContent = '❌ '+(d.message || '录入失败')
+    }
+  }catch(e){
+    document.getElementById('createViolationAlert').className = 'alert e'
+    document.getElementById('createViolationAlert').textContent = '❌ 网络错误'
+  }
+}
 
 
 
