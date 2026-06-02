@@ -761,7 +761,7 @@ function renderProfile(){
   const u=U();const t=T();const c=document.getElementById('profileContent')
   if(!t||!u){c.innerHTML=`<div class="profile-empty"><div class="ac">👤</div><h2>未登录</h2><p>登录后发布商品、管理订单</p><button class="btn btn-primary" style="width:200px;display:inline-block" onclick="openModal('loginModal')">登录/注册</button></div>`;return}
   const bc=u.authStatus===1?'v':'';const bt=u.authStatus===1?'✅ 已认证':u.authStatus===2?'❌ 认证失败':'⏳ 未认证'
-  c.innerHTML=`<div class="profile-hero"><div class="pha">👤</div><div class="phn">${u.username}</div><div class="phs">${u.role==='admin'?'管理员':'普通用户'} · 信用 ${u.creditScore||100}</div><div><span class="profile-badge ${bc}">${bt}</span></div></div><div class="ms"><div class="mc"><div class="mi2" onclick="showWallet()"><span class="mi2i">💰</span>我的钱包<span class="mi2a">→</span></div><div class="mi2" onclick="showFavorites()"><span class="mi2i">⭐</span>我的收藏<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('arbitration')"><span class="mi2i">⚖️</span>仲裁中心<span class="mi2a">→</span></div><div class="mi2" onclick="showMine()"><span class="mi2i">📦</span>我的发布<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('orders')"><span class="mi2i">📋</span>我的订单<span class="mi2a">→</span></div><div class="mi2" onclick="showAuth()"><span class="mi2i">🎓</span>校园认证<span class="mi2a">→</span></div>${u.role==='admin'?`<div class="mi2" onclick="switchTab('admin-arbitration')"><span class="mi2i">📝</span>仲裁管理<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('admin-violation')"><span class="mi2i">⚠️</span>违规管理<span class="mi2a">→</span></div><div class="mi2" onclick="showAdminGoods()"><span class="mi2i">📦</span>审核商品<span class="mi2a">→</span></div><div class="mi2" onclick="showAdminDelist()"><span class="mi2i">🗑️</span>下架管理<span class="mi2a">→</span></div>`:''}</div><div class="mc"><div class="mi2" onclick="showUserInfo()"><span class="mi2i">👤</span>个人信息<span class="mi2a">→</span></div></div></div><div class="lw"><div class="lobtn" onclick="logout()">退出登录</div></div>`
+  c.innerHTML=`<div class="profile-hero"><div class="pha">👤</div><div class="phn">${u.username}</div><div class="phs">${u.role==='admin'?'管理员':'普通用户'} · 信用 ${u.creditScore||100}</div><div><span class="profile-badge ${bc}">${bt}</span></div></div><div class="ms"><div class="mc"><div class="mi2" onclick="showWallet()"><span class="mi2i">💰</span>我的钱包<span class="mi2a">→</span></div><div class="mi2" onclick="showFavorites()"><span class="mi2i">⭐</span>我的收藏<span class="mi2a">→</span></div><div class="mi2" onclick="showMyEvaluations()"><span class="mi2i">✍️</span>我的评价<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('arbitration')"><span class="mi2i">⚖️</span>仲裁中心<span class="mi2a">→</span></div><div class="mi2" onclick="showMine()"><span class="mi2i">📦</span>我的发布<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('orders')"><span class="mi2i">📋</span>我的订单<span class="mi2a">→</span></div><div class="mi2" onclick="showAuth()"><span class="mi2i">🎓</span>校园认证<span class="mi2a">→</span></div>${u.role==='admin'?`<div class="mi2" onclick="showAdminAuth()"><span class="mi2i">🎓</span>审核认证<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('admin-arbitration')"><span class="mi2i">📝</span>仲裁管理<span class="mi2a">→</span></div><div class="mi2" onclick="switchTab('admin-violation')"><span class="mi2i">⚠️</span>违规管理<span class="mi2a">→</span></div><div class="mi2" onclick="showAdminGoods()"><span class="mi2i">📦</span>审核商品<span class="mi2a">→</span></div><div class="mi2" onclick="showAdminDelist()"><span class="mi2i">🗑️</span>下架管理<span class="mi2a">→</span></div>`:''}</div><div class="mc"><div class="mi2" onclick="showUserInfo()"><span class="mi2i">👤</span>个人信息<span class="mi2a">→</span></div></div></div><div class="lw"><div class="lobtn" onclick="logout()">退出登录</div></div>`
 }
 // FAVORITES
 async function showFavorites(){
@@ -838,6 +838,44 @@ function showMine(){
       document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="mt">📦 我的发布</div>${h}<div class="btn btn-outline" onclick="closeModal('detailModal')">关闭</div>`;openModal('detailModal')
     }
   })
+}
+
+// 我的评价
+async function showMyEvaluations(){
+  const u=U();if(!u){openModal('loginModal');return}
+  try{
+    const r=await fetch(`${API}/api/evaluation/mine`,{headers:{'Authorization':'Bearer '+T()}})
+    const d=await r.json()
+    if(d.code===200&&d.data&&d.data.content){
+      const h=d.data.content.map(e=>{
+        const stars='⭐'.repeat(e.rating)+'☆'.repeat(5-e.rating)
+        return `<div style="background:var(--card);border-radius:12px;padding:14px;margin-bottom:10px;border:1px solid var(--border)">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <span style="font-size:13px;color:var(--muted)">评价于 ${e.createdAt?e.createdAt.split('T')[0]:'-'}</span>
+            <span style="font-size:14px">${stars}</span>
+          </div>
+          <div style="font-size:14px;line-height:1.6">${e.content}</div>
+          <button onclick="deleteEvaluation(${e.id},this)" style="margin-top:10px;padding:6px 14px;border:none;border-radius:8px;background:var(--ivory);color:var(--muted);font-size:12px;cursor:pointer">删除</button>
+        </div>`
+      }).join('')||'<div class="empty"><div class="ea">⭐</div><h3>暂无评价</h3></div>'
+      document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="mt">✍️ 我的评价</div>${h}<div class="btn btn-outline" onclick="closeModal('detailModal')">关闭</div>`
+      openModal('detailModal')
+    }else{
+      document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="mt">✍️ 我的评价</div><div class="empty"><div class="ea">⭐</div><h3>暂无评价</h3></div><div class="btn btn-outline" onclick="closeModal('detailModal')">关闭</div>`
+      openModal('detailModal')
+    }
+  }catch(e){alert('加载评价失败')}
+}
+
+async function deleteEvaluation(id,btn){
+  if(!confirm('确定删除这条评价吗？'))return
+  try{
+    const r=await fetch(`${API}/api/evaluation/${id}`,{method:'DELETE',headers:{'Authorization':'Bearer '+T()}})
+    const d=await r.json()
+    if(d.code===200){
+      btn.parentElement.style.display='none'
+    }else{alert(d.message||'删除失败')}
+  }catch(e){alert('删除失败')}
 }
 function showUserInfo(){
   const u=U();if(!u){openModal('loginModal');return}
@@ -1139,7 +1177,7 @@ async function submitArbitrationFromOrder(){
     
     console.log('Request body:', requestBody)
     
-    const r=await fetch(`${API}/api/admin/arbitration`,{
+    const r=await fetch(`${API}/api/arbitration`,{
       method:'POST',
       headers:{'Content-Type':'application/json','Authorization':'Bearer '+T()},
       body:JSON.stringify(requestBody)
@@ -1189,7 +1227,7 @@ async function renderArbitration(){
   el.innerHTML='<div class="spinner"></div>'
   
   try{
-    const url=arbTab==='my-applicant'?`${API}/api/admin/arbitration/my/applicant`:`${API}/api/admin/arbitration/my/respondent`
+    const url=arbTab==='my-applicant'?`${API}/api/arbitration/my/applicant`:`${API}/api/arbitration/my/respondent`
     const r=await fetch(url,{headers:{'Authorization':'Bearer '+T()}})
     const d=await r.json()
     
@@ -1255,7 +1293,7 @@ async function renderArbitration(){
 async function cancelArbitration(id){
   if(!confirm('确定要撤销此仲裁吗？'))return
   try{
-    const r=await fetch(`${API}/api/admin/arbitration/${id}/cancel`,{method:'POST',headers:{'Authorization':'Bearer '+T()}})
+    const r=await fetch(`${API}/api/arbitration/${id}/cancel`,{method:'POST',headers:{'Authorization':'Bearer '+T()}})
     const d=await r.json()
     if(d.code===200){
       alert('✅ '+d.data)
@@ -1272,7 +1310,7 @@ async function replyArbitration(id){
   const reply=prompt('请输入您的回复:')
   if(!reply)return
   try{
-    const r=await fetch(`${API}/api/admin/arbitration/${id}/reply`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+T()},body:JSON.stringify({reply})})
+    const r=await fetch(`${API}/api/arbitration/${id}/reply`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+T()},body:JSON.stringify({reply})})
     const d=await r.json()
     if(d.code===200){
       alert('✅ '+d.data)

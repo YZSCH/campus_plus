@@ -111,7 +111,12 @@ public class WalletService {
         // 增加卖家余额
         User seller = userRepo.findById(sellerId).orElse(null);
         if (seller == null) return ApiResult.error(404, "卖家不存在");
-        seller.setBalance(seller.getBalance().add(amount));
+        // 处理余额为空的情况
+        BigDecimal currentBalance = seller.getBalance();
+        if (currentBalance == null) {
+            currentBalance = BigDecimal.ZERO;
+        }
+        seller.setBalance(currentBalance.add(amount));
         userRepo.save(seller);
 
         // 创建收款记录
