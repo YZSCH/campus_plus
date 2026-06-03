@@ -1,6 +1,6 @@
 package com.campus.trade.pay.controller;
 
-import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.DefaultAlipayClient;
@@ -40,6 +40,8 @@ public class AlipayController {
     private static final Logger log = LoggerFactory.getLogger(AlipayController.class);
 
     @Autowired private PayUtil payUtil;
+        private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+
     @Autowired private OrderService orderService;
     @Autowired private WalletService walletService;
     @Autowired private MessageService messageService;
@@ -228,11 +230,18 @@ public class AlipayController {
             return "<script>alert('查询支付结果失败');window.location.href='/';</script>";
         }
 
-        JSONObject jsonObject = JSONObject.parseObject(queryResult);
-        Object o = jsonObject.get("alipay_trade_query_response");
-        @SuppressWarnings("unchecked")
-        Map<String, Object> map = (Map<String, Object>) o;
-        Object tradeStatus = map.get("trade_status");
+        Object tradeStatus = null;
+        try {
+            @SuppressWarnings("unchecked")
+            Map<String, Object> jsonObject = OBJECT_MAPPER.readValue(queryResult, Map.class);
+            Object o = jsonObject.get("alipay_trade_query_response");
+            @SuppressWarnings("unchecked")
+            Map<String, Object> map = (Map<String, Object>) o;
+            tradeStatus = map.get("trade_status");
+        } catch (Exception e) {
+            log.error("解析支付宝返回结果失败", e);
+            return "<script>alert('解析支付结果失败');window.location.href='/';</script>";
+        }
 
         if ("TRADE_SUCCESS".equals(tradeStatus)) {
             orderService.updatePayStatus(outTradeNo, "paid", "paid");

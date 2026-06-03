@@ -31,7 +31,7 @@ CREATE TABLE IF NOT EXISTS tb_goods (
     category VARCHAR(50) COMMENT '分类',
     price DECIMAL(10,2) NOT NULL COMMENT '价格',
     images TEXT COMMENT '图片JSON数组',
-    status VARCHAR(20) DEFAULT 'onsale' COMMENT '状态 onsale/sold/off',
+    status VARCHAR(20) DEFAULT 'pending' COMMENT '状态 pending/onsale/sold/off/rejected',
     contact_phone VARCHAR(20) COMMENT '联系电话',
     wechat VARCHAR(50) COMMENT '微信',
     location VARCHAR(100) COMMENT '所在地',

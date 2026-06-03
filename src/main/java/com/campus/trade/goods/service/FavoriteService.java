@@ -39,7 +39,9 @@ public class FavoriteService {
     public ApiResult<List<Goods>> list(Long userId) {
         List<Favorite> favorites = favoriteRepository.findByUserIdOrderByCreatedAtDesc(userId);
         List<Long> goodsIds = favorites.stream().map(Favorite::getGoodsId).collect(Collectors.toList());
-        List<Goods> goods = goodsRepository.findAllById(goodsIds);
+        List<Goods> goods = goodsRepository.findAllById(goodsIds).stream()
+                .filter(g -> "onsale".equals(g.getStatus()))
+                .collect(Collectors.toList());
         goods.sort((a, b) -> {
             int idxA = goodsIds.indexOf(a.getId());
             int idxB = goodsIds.indexOf(b.getId());

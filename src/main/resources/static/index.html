@@ -29,6 +29,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
 .gci{display:flex;padding:14px;gap:14px}
 .gicon{width:68px;height:68px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
 .gicon.b1{background:#F5F0EB}.gicon.b2{background:#F0F3F7}.gicon.b3{background:#F0F7F2}.gicon.b4{background:#FDF0ED}.gicon.b5{background:#F5F0EB}.gicon.b6{background:var(--ivory)}
+.gicon img{width:100%;height:100%;object-fit:cover;border-radius:12px}
 .ginfo{flex:1;min-width:0}
 .gtitle{font-size:15px;font-weight:600;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
 .gprice{color:var(--rose-dark);font-weight:700;font-size:18px;margin-top:4px}
@@ -98,6 +99,14 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
 .lw{padding:12px 20px;margin-top:8px}
 .lobtn{width:100%;padding:14px;border:1px solid var(--border);border-radius:14px;text-align:center;color:var(--error);font-size:14px;font-weight:500;cursor:pointer;background:var(--card)}
 .lobtn:active{background:var(--error-bg)}
+.upload-area{border:2px dashed var(--border);border-radius:12px;padding:24px;text-align:center;cursor:pointer;transition:.2s;background:var(--ivory)}
+.upload-area:hover{border-color:var(--rose);background:var(--rose-light)}
+.upload-area.has-img{border-style:solid;border-color:var(--success);background:var(--success-bg);padding:8px}
+.upload-icon{font-size:32px;margin-bottom:6px}
+.upload-hint{font-size:13px;color:var(--muted)}
+.upload-hint span{color:var(--rose-dark);font-weight:600}
+.upload-preview{max-width:100%;max-height:180px;border-radius:8px;object-fit:cover}
+.upload-input{display:none}
 
 /* msgConversationView */
 .citem{display:flex;align-items:center;padding:14px 0;gap:14px;border-bottom:1px solid var(--ivory);cursor:pointer;margin:0 20px}
@@ -161,6 +170,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
     <div class="fg"><label>描述</label><input id="pubDesc" placeholder="描述新旧程度等"></div>
     <div class="fr"><div class="fg"><label>电话</label><input id="pubPhone" placeholder="手机号"></div><div class="fg"><label>微信</label><input id="pubWechat" placeholder="微信号(选填)"></div></div>
     <div class="fg"><label>位置</label><input id="pubLocation" placeholder="如：主校区"></div>
+    <div class="fg"><label>商品图片（选填，仅支持 JPG / PNG，最大 5MB）</label><div class="upload-area" id="uploadArea" onclick="document.getElementById('uploadInput').click()"><div class="upload-icon">📷</div><div class="upload-hint">点击上传图片 · <span>JPG/PNG</span> · 最大5MB</div></div><input type="file" id="uploadInput" class="upload-input" accept=".jpg,.jpeg,.png" onchange="previewImage(this)"></div>
     <button class="btn btn-primary" onclick="publishGoods()" style="margin-top:6px">发布</button>
   </div>
 </div>
@@ -226,7 +236,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
 <div id="chatOverlay" style="display:none;position:fixed;top:0;bottom:80px;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--cream);z-index:300;flex-direction:column">
   <div style="padding:48px 20px 12px;background:var(--card);display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);flex-shrink:0">
     <span onclick="closeChatOverlay()" style="font-size:24px;cursor:pointer;padding:4px;line-height:1">←</span>
-    <div><div id="chatTargetName" style="font-weight:700;font-size:16px">加载中...</div><div id="chatTargetSub" style="font-size:12px;color:var(--muted)">加载中</div></div>
+    <div style="display:flex;align-items:center;gap:8px"><div id="chatTargetName" style="font-weight:700;font-size:16px">加载中...</div><span id="chatTargetRating" style="font-size:13px;color:var(--gold);font-weight:600"></span></div><div id="chatTargetSub" style="font-size:12px;color:var(--muted);flex:1;text-align:right">加载中</div>
   </div>
   <div id="chatOrderArea" style="padding:0 20px;flex-shrink:0"></div>
   <div id="chatMsgs" style="flex:1;overflow-y:auto;padding:10px 20px;display:flex;flex-direction:column;min-height:0"></div>
@@ -332,6 +342,11 @@ function switchTab(n){
 let curCat='',curKw=''
 function filterCat(c){curCat=c;document.querySelectorAll('.cat').forEach(t=>t.classList.remove('active'));event.target.classList.add('active');loadGoods()}
 function searchGoods(){curKw=document.getElementById('searchInput').value;loadGoods()}
+function goodsIconHtml(g,cl,ic,sty){
+  sty=sty||''
+  if(g.images)return '<div class="gicon '+cl+'" style="overflow:hidden;padding:0;font-size:0'+sty+'"><img src="'+g.images+'" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display=\'none\';this.parentElement.style.fontSize=\'28px\';this.parentElement.textContent=\''+ic+'\'"></div>'
+  return '<div class="gicon '+cl+'"'+(sty?' style="'+sty.substring(1)+'"':'')+'>'+ic+'</div>'
+}
 async function loadGoods(){
   const el=document.getElementById('goodsList');el.innerHTML='<div class="spinner"></div>'
   if(curCat==='favorites'){
@@ -344,7 +359,7 @@ async function loadGoods(){
         el.innerHTML=d.data.map(g=>{
           const ic=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'🏡':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':'📎'
           const cl=g.category==='教材教辅'?'b1':g.category==='电子数码'?'b2':g.category==='生活用品'?'b3':g.category==='服饰美妆'?'b4':g.category==='体育用品'?'b5':'b6'
-          return `<div class="gc" onclick="showDetail(${g.id})"><div class="gci"><div class="gicon ${cl}">${ic}</div><div class="ginfo"><div class="gtitle">${g.title}</div><div class="gprice">¥${g.price}<s>${g.category||''}</s></div><div class="gmeta"><span>📍 ${g.location||'校内'}</span><span class="tag g">在售</span></div></div></div></div>`
+          return `<div class="gc" onclick="showDetail(${g.id})"><div class="gci">${goodsIconHtml(g,cl,ic)}<div class="ginfo"><div class="gtitle">${g.title}</div><div class="gprice">¥${g.price}<span style="font-weight:400;font-size:12px;color:var(--muted);margin-left:4px">${g.category||''}</span></div><div class="gmeta"><span>📍 ${g.location||'校内'}</span><span class="tag g">在售</span></div></div></div></div>`
         }).join('')
       }else{el.innerHTML='<div class="empty"><div class="ea">😶</div><h3>加载失败</h3></div>'}
     }catch(e){el.innerHTML='<div class="empty"><div class="ea">😶</div><h3>网络开小差了</h3></div>'}
@@ -359,7 +374,7 @@ async function loadGoods(){
       el.innerHTML=d.data.content.map(g=>{
         const ic=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'🏡':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':'📎'
         const cl=g.category==='教材教辅'?'b1':g.category==='电子数码'?'b2':g.category==='生活用品'?'b3':g.category==='服饰美妆'?'b4':g.category==='体育用品'?'b5':'b6'
-        return `<div class="gc" onclick="showDetail(${g.id})"><div class="gci"><div class="gicon ${cl}">${ic}</div><div class="ginfo"><div class="gtitle">${g.title}</div><div class="gprice">¥${g.price}<s>${g.category||''}</s></div><div class="gmeta"><span>📍 ${g.location||'校内'}</span><span class="tag g">在售</span></div></div></div></div>`
+        return `<div class="gc" onclick="showDetail(${g.id})"><div class="gci">${goodsIconHtml(g,cl,ic)}<div class="ginfo"><div class="gtitle">${g.title}</div><div class="gprice">¥${g.price}<span style="font-weight:400;font-size:12px;color:var(--muted);margin-left:4px">${g.category||''}</span></div><div class="gmeta"><span>📍 ${g.location||'校内'}</span><span class="tag g">在售</span></div></div></div></div>`
       }).join('')
     }else{el.innerHTML='<div class="empty"><div class="ea">😶</div><h3>加载失败</h3></div>'}
   }catch(e){el.innerHTML='<div class="empty"><div class="ea">😶</div><h3>网络开小差了</h3></div>'}
@@ -373,20 +388,26 @@ async function showDetail(id){
       const ic=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':''
       const bg=g.category==='教材教辅'?'#F5F0EB':g.category==='电子数码'?'#F0F3F7':g.category==='生活用品'?'#F0F7F2':g.category==='服饰美妆'?'#FDF0ED':g.category==='体育用品'?'#F5F0EB':'#F9F4F0'
       const own=u&&g.userId==u.userId
-            
+      const bannerHtml=g.images?`<img src="${g.images}" style="display:block;width:100%;height:180px;object-fit:cover" onerror="this.style.display='none';this.parentElement.style.fontSize='64px';this.parentElement.style.display='flex';this.parentElement.textContent='${ic}'">`:ic
+      // 查询收藏状态
+      let isFav=false
+      if(u&&!own){
+        try{const fr=await fetch(`${API}/api/favorite/check/${g.id}`,{headers:{'Authorization':'Bearer '+T()}});const fd=await fr.json();if(fd.code===200)isFav=fd.data}catch(e){}
+      }
       // 构建操作按钮
       let actionButtons=''
       if(own){
         actionButtons='<div style="padding:15px;border-radius:12px;background:var(--ivory);text-align:center;font-size:14px;color:var(--muted);width:100%">这是我的商品</div>'
       }else if(u){
-        // 已登录且不是自己的商品，显示收藏和联系卖家按钮
-        actionButtons=`<button class="btn" style="flex:1;background:var(--rose-light);color:var(--rose-dark);border:2px solid var(--rose);border-radius:12px" onclick="toggleFavoriteDetail(${g.id},this)">⭐ 收藏</button><button class="btn btn-primary" style="flex:1" onclick="contactSeller(${g.id},${g.userId},'${g.title.replace(/'/g,"\\'")}')">💬 联系卖家</button>`
+        const favText=isFav?'⭐ 已收藏':'⭐ 收藏'
+        const favBg=isFav?'background:var(--ivory);color:var(--muted);border:2px solid var(--border)':'background:var(--rose-light);color:var(--rose-dark);border:2px solid var(--rose)'
+        actionButtons=`<button class="btn" style="flex:1;${favBg};border-radius:12px" onclick="toggleFavoriteDetail(${g.id},this)">${favText}</button><button class="btn btn-primary" style="flex:1" onclick="contactSeller(${g.id},${g.userId},'${g.title.replace(/'/g,"\\'")}')">💬 联系卖家</button>`
       }else{
         // 未登录，只显示联系卖家按钮（会提示登录）
         actionButtons=`<button class="btn btn-primary" style="flex:1" onclick="contactSeller(${g.id},${g.userId},'${g.title.replace(/'/g,"\\'")}')"> 联系卖家</button>`
       }
             
-      document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="detail-banner" style="background:${bg}">${ic}</div><div class="detail-title">${g.title}</div><div class="detail-price">¥${g.price}</div>${g.description?`<div class="detail-desc">${g.description}</div>`:''}<div class="detail-meta"><span> ${g.contactPhone||'未填'}</span>${g.wechat?`<span>💬 ${g.wechat}</span>`:''}<span> ${g.location||'校内'}</span></div><div class="detail-actions" style="display:flex;gap:10px">${actionButtons}<button class="btn btn-outline" style="flex:1" onclick="closeModal('detailModal')">关闭</button></div>`
+      document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="detail-banner" style="background:${bg}${g.images?';display:block;overflow:hidden;padding:0;font-size:0':''}">${bannerHtml}</div><div class="detail-title">${g.title}</div><div class="detail-price">¥${g.price}</div>${g.description?`<div class="detail-desc">${g.description}</div>`:''}<div class="detail-meta"><span> ${g.contactPhone||'未填'}</span>${g.wechat?`<span>💬 ${g.wechat}</span>`:''}<span> ${g.location||'校内'}</span></div><div class="detail-actions" style="display:flex;gap:10px">${actionButtons}<button class="btn btn-outline" style="flex:1" onclick="closeModal('detailModal')">关闭</button></div>`
       openModal('detailModal')
     }
   }catch(e){}
@@ -403,11 +424,21 @@ function contactSeller(gid,sid,title){
 function openChatOverlay(){
   document.getElementById('chatOverlay').style.display='flex'
   document.getElementById('chatTargetName').textContent='加载中...'
+  document.getElementById('chatTargetRating').textContent=''
   document.getElementById('chatTargetSub').textContent=chatGoodsTitle?'关于: '+chatGoodsTitle:'商品咨询'
   const oc=document.getElementById('chatOrderArea')
   if(chatGoodsId)oc.innerHTML=`<div class="chat-order-card"><div class="co-title">📦 ${chatGoodsTitle||'商品'}</div><div class="co-actions"><button style="background:var(--charcoal);color:#fff" onclick="createOrderFromChat()">创建订单</button><button style="background:var(--ivory);color:var(--charcoal)" onclick="document.getElementById('chatOrderArea').innerHTML=''">收起</button></div></div>`
   else oc.innerHTML=''
   fetch(`${API}/api/user/info/${chatTarget}`,{headers:{'Authorization':'Bearer '+T()}}).then(r=>r.json()).then(d=>{if(d.code===200&&d.data)document.getElementById('chatTargetName').textContent=d.data.username})
+  fetch(`${API}/api/evaluation/rating/${chatTarget}`).then(r=>r.json()).then(d=>{
+    if(d.code===200&&d.data!==null&&d.data!==undefined){
+      document.getElementById('chatTargetRating').textContent='⭐ '+Math.round(d.data)
+    }else{
+      document.getElementById('chatTargetRating').textContent='暂无评价'
+    }
+  }).catch(()=>{
+    document.getElementById('chatTargetRating').textContent='暂无评价'
+  })
   loadChatMsgs()
   if(chatPoll)clearInterval(chatPoll)
   chatPoll=setInterval(loadChatMsgs,2000)
@@ -476,7 +507,48 @@ async function loadConvs(){
   }catch(e){}
 }
 
+// IMAGE PREVIEW
+function previewImage(input){
+  if(!input.files||!input.files[0])return;
+  var file=input.files[0];
+  // 前端格式校验
+  var ext=file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+  if(ext!=='.jpg'&&ext!=='.jpeg'&&ext!=='.png'){
+    alert('仅支持 JPG/JPEG/PNG 格式');
+    input.value='';return;
+  }
+  if(file.size>5*1024*1024){
+    alert('图片大小不能超过 5MB');
+    input.value='';return;
+  }
+  var reader=new FileReader();
+  reader.onload=function(e){
+    var area=document.getElementById('uploadArea');
+    area.classList.add('has-img');
+    area.innerHTML='<img class="upload-preview" src="'+e.target.result+'" alt="预览"><div class="upload-hint" style="margin-top:4px;font-size:11px">点击更换图片</div>';
+    area.onclick=function(){document.getElementById('uploadInput').click()};
+  };
+  reader.readAsDataURL(file);
+}
+
 // PUBLISH
+function resetPublishForm(){
+  document.getElementById('pubTitle').value='';
+  document.getElementById('pubCategory').value='教材教辅';
+  document.getElementById('pubPrice').value='';
+  document.getElementById('pubDesc').value='';
+  document.getElementById('pubPhone').value='';
+  document.getElementById('pubWechat').value='';
+  document.getElementById('pubLocation').value='';
+  document.getElementById('pubAlert').className='alert';
+  document.getElementById('pubAlert').textContent='';
+  var fileInput=document.getElementById('uploadInput');
+  fileInput.value='';
+  var area=document.getElementById('uploadArea');
+  area.classList.remove('has-img');
+  area.innerHTML='<div class="upload-icon">📷</div><div class="upload-hint">点击上传图片 · <span>JPG/PNG</span> · 最大5MB</div>';
+  area.onclick=function(){document.getElementById('uploadInput').click()};
+}
 async function publishGoods(){
   const u=U();if(!u){openModal('loginModal');return}
   const d={title:document.getElementById('pubTitle').value,category:document.getElementById('pubCategory').value,price:document.getElementById('pubPrice').value,description:document.getElementById('pubDesc').value,contactPhone:document.getElementById('pubPhone').value,wechat:document.getElementById('pubWechat').value,location:document.getElementById('pubLocation').value}
@@ -494,9 +566,24 @@ async function publishGoods(){
   }
 
   try{
+    // 如果有上传图片，先上传
+    var fileInput=document.getElementById('uploadInput');
+    if(fileInput.files&&fileInput.files[0]){
+      var formData=new FormData();
+      formData.append('file',fileInput.files[0]);
+      var uploadRes=await fetch(`${API}/api/upload/image`,{method:'POST',headers:{'Authorization':'Bearer '+T()},body:formData});
+      var uploadRd=await uploadRes.json();
+      if(uploadRd.code===200){
+        d.images=uploadRd.data.url;
+      }else{
+        document.getElementById('pubAlert').className='alert e';
+        document.getElementById('pubAlert').textContent='❌ 图片上传失败: '+(uploadRd.message||'失败');
+        return;
+      }
+    }
     const r=await fetch(`${API}/api/goods/create`,{method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+T()},body:JSON.stringify(d)})
     const rd=await r.json()
-    if(rd.code===200){document.getElementById('pubAlert').className='alert s';document.getElementById('pubAlert').textContent='✅ 发布成功！';setTimeout(()=>switchTab('home'),800)}
+    if(rd.code===200){document.getElementById('pubAlert').className='alert s';document.getElementById('pubAlert').textContent='✅ 商品上传成功，待审核';resetPublishForm();setTimeout(()=>switchTab('home'),800)}
     else{document.getElementById('pubAlert').className='alert e';document.getElementById('pubAlert').textContent='❌ '+(rd.message||'失败')}
   }catch(e){document.getElementById('pubAlert').className='alert e';document.getElementById('pubAlert').textContent='❌ 网络错误'}
 }
@@ -798,7 +885,7 @@ async function showFavorites(){
       const h=d.data.length?d.data.map(g=>{
         const ic=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'🏡':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':'📎'
         const cl=g.category==='教材教辅'?'b1':g.category==='电子数码'?'b2':g.category==='生活用品'?'b3':g.category==='服饰美妆'?'b4':g.category==='体育用品'?'b5':'b6'
-        return `<div class="gc" onclick="showDetail(${g.id})"><div class="gci"><div class="gicon ${cl}">${ic}</div><div class="ginfo"><div class="gtitle">${g.title}</div><div class="gprice">¥${g.price}<s>${g.category||''}</s></div><div class="gmeta"><span>📍 ${g.location||'校内'}</span><button onclick="event.stopPropagation();toggleFavorite(${g.id},this)" style="padding:4px 10px;border:none;border-radius:6px;background:var(--rose-light);color:var(--rose-dark);font-size:11px;font-weight:600;cursor:pointer">取消收藏</button></div></div></div></div>`
+        return `<div class="gc" onclick="showDetail(${g.id})"><div class="gci">${goodsIconHtml(g,cl,ic)}<div class="ginfo"><div class="gtitle">${g.title}</div><div class="gprice">¥${g.price}<span style="font-weight:400;font-size:12px;color:var(--muted);margin-left:4px">${g.category||''}</span></div><div class="gmeta"><span>📍 ${g.location||'校内'}</span><button onclick="event.stopPropagation();toggleFavorite(${g.id},this)" style="padding:4px 10px;border:none;border-radius:6px;background:var(--rose-light);color:var(--rose-dark);font-size:11px;font-weight:600;cursor:pointer">取消收藏</button></div></div></div></div>`
       }).join(''):'<div class="empty"><div class="ea">⭐</div><h3>暂无收藏</h3></div>'
       document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="mt">⭐ 我的收藏</div>${h}<div class="btn btn-outline" onclick="closeModal('detailModal')">关闭</div>`
       openModal('detailModal')
@@ -837,8 +924,8 @@ async function toggleFavoriteDetail(goodsId,btn){
     console.log('收藏请求 - 响应数据:', d)
     
     if(d.code===200){
-      // 切换按钮状态
-      if(btn.textContent.includes('收藏')){
+      // 根据API返回值更新按钮状态：true=已收藏, false=已取消
+      if(d.data){
         btn.innerHTML='⭐ 已收藏'
         btn.style.background='var(--ivory)'
         btn.style.color='var(--muted)'
@@ -859,7 +946,11 @@ async function toggleFavoriteDetail(goodsId,btn){
 function showMine(){
   fetch(`${API}/api/goods/mine`,{headers:{'Authorization':'Bearer '+T()}}).then(r=>r.json()).then(d=>{
     if(d.code===200&&d.data){
-      const h=d.data.map(g=>`<div class="gc"><div class="gci"><div class="gicon b6" style="width:56px;height:56px;font-size:22px">📦</div><div class="ginfo"><div class="gtitle">${g.title}</div><div class="gprice" style="font-size:14px">¥${g.price}</div><div class="gmeta"><span class="tag ${g.status==='onsale'?'g':'r'}">${g.status==='onsale'?'在售':'已下架'}</span></div></div></div></div>`).join('')||'<div class="empty"><div class="ea">📦</div><h3>暂无发布</h3></div>'
+      const h=d.data.map(g=>{
+          const ic='📦';const cl='b6'
+          const st=g.status;const tagClass=st==='onsale'?'g':st==='pending'?'y':'r';const tagText=st==='onsale'?'在售':st==='pending'?'审核中':'已下架'
+          return `<div class="gc"><div class="gci">${goodsIconHtml(g,cl,ic,';width:56px;height:56px;font-size:22px')}<div class="ginfo"><div class="gtitle">${g.title}</div><div class="gprice" style="font-size:14px">¥${g.price}</div><div class="gmeta"><span class="tag ${tagClass}">${tagText}</span></div></div></div></div>`
+        }).join('')||'<div class="empty"><div class="ea">📦</div><h3>暂无发布</h3></div>'
       document.getElementById('detailContent').innerHTML=`<div class="mi"></div><div class="mt">📦 我的发布</div>${h}<div class="btn btn-outline" onclick="closeModal('detailModal')">关闭</div>`;openModal('detailModal')
     }
   })

@@ -16,7 +16,7 @@ public class Goods {
     @Column(length = 50) private String category;
     @Column(nullable = false) private BigDecimal price;
     @Column(columnDefinition = "TEXT") private String images;
-    @Builder.Default private String status = "onsale";
+    @Builder.Default private String status = "pending";
     @Column(name = "contact_phone", length = 20) private String contactPhone;
     @Column(length = 50) private String wechat;
     @Column(length = 100) private String location;

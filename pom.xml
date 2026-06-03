@@ -103,11 +103,7 @@
         </dependency>
 
         <!-- fastjson（支付宝异步通知解析用） -->
-        <dependency>
-            <groupId>com.alibaba</groupId>
-            <artifactId>fastjson</artifactId>
-            <version>1.2.61</version>
-        </dependency>
+        <!-- fastjson removed (use Jackson from Spring Boot instead) -->
 
 
         <!-- Test -->

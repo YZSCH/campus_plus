@@ -50,4 +50,9 @@ public class EvaluationController {
                                     Authentication auth) {
         return evaluationService.report(id, (Long) auth.getPrincipal(), reason);
     }
+
+    @GetMapping("/rating/{userId}")
+    public ApiResult<Double> getAverageRating(@PathVariable Long userId) {
+        return evaluationService.getAverageRating(userId);
+    }
 }

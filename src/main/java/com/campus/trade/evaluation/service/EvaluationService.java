@@ -69,4 +69,9 @@ public class EvaluationService {
             return ApiResult.success("举报成功，平台将尽快处理", "举报成功");
         }).orElse(ApiResult.error(404, "评价不存在"));
     }
+
+    public ApiResult<Double> getAverageRating(Long targetUserId) {
+        Double avg = evaluationRepository.getAverageRatingByTargetUserIdAndStatus(targetUserId, 0);
+        return ApiResult.success(avg);
+    }
 }

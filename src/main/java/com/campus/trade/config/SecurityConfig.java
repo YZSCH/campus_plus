@@ -33,10 +33,16 @@ public class SecurityConfig {
                 // 公开访问的静态资源和页面
                 .antMatchers("/", "/index.html", "/favicon.ico").permitAll()
                 .antMatchers("/css/**", "/js/**", "/img/**").permitAll()
+                // 上传文件可公开访问
+                .antMatchers("/uploads/**").permitAll()
                 // 用户认证相关（注册、登录、发送验证码）
                 .antMatchers("/api/user/register", "/api/user/login", "/api/user/send-code").permitAll()
                 // 商品列表和详情可以匿名访问
                 .antMatchers("/api/goods/list", "/api/goods/**").permitAll()
+                // 获取评价评分可以公开访问
+                .antMatchers("/api/evaluation/rating/**").permitAll()
+                // 文件上传需要登录
+                .antMatchers("/api/upload/**").authenticated()
                 .antMatchers("/api/favorite/**").authenticated()  // 收藏功能
                 .antMatchers("/api/order/**").authenticated()  // 订单功能
                 .antMatchers("/api/message/**").authenticated()  // 消息功能

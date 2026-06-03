@@ -32,7 +32,7 @@ public class GoodsService {
     }
 
     public ApiResult<Goods> create(Goods goods) {
-        goods.setStatus("onsale");
+        goods.setStatus("pending");
         return ApiResult.success(goodsRepository.save(goods));
     }
 

@@ -1,6 +1,6 @@
 package com.campus.trade.pay.util;
 
-import com.alibaba.fastjson.JSONObject;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.alipay.api.AlipayApiException;
 import com.alipay.api.AlipayClient;
 import com.alipay.api.AlipayConfig;
@@ -10,7 +10,7 @@ import com.alipay.api.request.AlipayTradeQueryRequest;
 import com.alipay.api.response.AlipayTradeQueryResponse;
 import org.springframework.stereotype.Component;
 
-
+import java.util.Map;
 
 /**
  * 支付宝支付工具类
@@ -18,6 +18,8 @@ import org.springframework.stereotype.Component;
  */
 @Component
 public class PayUtil {
+
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
 
     // ==================== ⚠️ 请填写你的支付宝沙箱配置 ====================
 
@@ -109,9 +111,14 @@ public class PayUtil {
      */
     public String query(String outTradeNo) {
         AlipayTradeQueryRequest request = new AlipayTradeQueryRequest();
-        JSONObject bizContent = new JSONObject();
-        bizContent.put("out_trade_no", outTradeNo);
-        request.setBizContent(bizContent.toString());
+        try {
+            Map<String, String> bizContent = new java.util.HashMap<>();
+            bizContent.put("out_trade_no", outTradeNo);
+            request.setBizContent(OBJECT_MAPPER.writeValueAsString(bizContent));
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
 
         AlipayTradeQueryResponse response = null;
         String body = null;
