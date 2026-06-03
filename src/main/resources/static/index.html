@@ -6,41 +6,43 @@
 <title>校园二手交易平台</title>
 <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏫</text></svg>">
 <style>
-:root{--rose:#E8A69B;--rose-dark:#C48378;--rose-light:#FDF0ED;--cream:#FFFCF9;--ivory:#F9F4F0;--charcoal:#2C2422;--muted:#9E928E;--border:#EDE4E0;--card:#FFF;--success:#8BBF9E;--success-bg:#F0F7F2;--error:#D4827A;--error-bg:#FDF0EE;--gold:#D4A76A;--gold-bg:#FBF5EC;--radius:20px;--radius-sm:12px}
+:root{--rose:#E8A69B;--rose-dark:#C48378;--rose-light:#FDF0ED;--cream:#FFFCF9;--ivory:#F9F4F0;--charcoal:#2C2422;--muted:#9E928E;--border:#EDE4E0;--card:#FFF;--success:#8BBF9E;--success-bg:#F0F7F2;--error:#D4827A;--error-bg:#FDF0EE;--gold:#D4A76A;--gold-bg:#FBF5EC;--radius:12px;--radius-sm:8px}
 *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
-body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif;background:var(--cream);color:var(--charcoal)}
-.page{display:none;min-height:100vh;padding-bottom:80px}
+body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Neue",sans-serif;background:var(--cream);color:var(--charcoal);min-height:100vh}
+.page{display:none;min-height:calc(100vh - 70px);padding-top:70px}
 .page.active{display:block;animation:fadeIn .3s ease}
 @keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
-.page-header{padding:20px 20px 12px;display:flex;align-items:center;justify-content:space-between;background:var(--card)}
-.page-header h1{font-size:20px;font-weight:700}
-.search-box{margin:0 20px 12px;position:relative}
-.search-box input{width:100%;padding:12px 16px 12px 44px;border:1.5px solid var(--border);border-radius:14px;font-size:15px;outline:none;background:var(--card);transition:.2s}
+.page-header{padding:20px 24px 12px;display:flex;align-items:center;justify-content:space-between;background:var(--card)}
+.page-header h1{font-size:24px;font-weight:700}
+.search-box{margin:0 24px 12px;position:relative;max-width:600px}
+.search-box input{width:100%;padding:14px 16px 14px 44px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;outline:none;background:var(--card);transition:.2s}
 .search-box input:focus{border-color:var(--rose);box-shadow:0 0 0 3px rgba(232,166,155,0.1)}
 .search-box .si{position:absolute;left:16px;top:50%;transform:translateY(-50%);font-size:16px;color:var(--muted)}
-.search-box .sb{position:absolute;right:5px;top:50%;transform:translateY(-50%);padding:8px 16px;border:none;border-radius:10px;background:var(--charcoal);color:#fff;font-size:13px;font-weight:600;cursor:pointer}
-.categories{display:flex;gap:6px;padding:4px 20px 12px;overflow-x:auto;scrollbar-width:none}
-.categories::-webkit-scrollbar{display:none}
-.cat{padding:8px 16px;border-radius:100px;font-size:13px;font-weight:500;background:var(--card);color:var(--muted);cursor:pointer;white-space:nowrap;border:1px solid var(--border);transition:.2s}
+.search-box .sb{position:absolute;right:5px;top:50%;transform:translateY(-50%);padding:10px 20px;border:none;border-radius:10px;background:var(--charcoal);color:#fff;font-size:13px;font-weight:600;cursor:pointer}
+.categories{display:flex;gap:8px;padding:4px 24px 12px;flex-wrap:wrap}
+.cat{padding:10px 20px;border-radius:100px;font-size:14px;font-weight:500;background:var(--card);color:var(--muted);cursor:pointer;white-space:nowrap;border:1px solid var(--border);transition:.2s}
+.cat:hover{background:var(--ivory)}
 .cat.active{background:var(--charcoal);color:#fff;border-color:var(--charcoal)}
-.goods-grid{padding:4px 20px;display:flex;flex-direction:column;gap:10px}
+.goods-grid{padding:12px 24px;display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:16px}
 .gc{background:var(--card);border-radius:var(--radius);overflow:hidden;cursor:pointer;border:1px solid var(--border);transition:.2s}
-.gc:active{transform:scale(0.985)}
-.gci{display:flex;padding:14px;gap:14px}
-.gicon{width:68px;height:68px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:28px;flex-shrink:0}
+.gc:hover{box-shadow:0 4px 12px rgba(0,0,0,0.08);transform:translateY(-2px)}
+.gci{display:flex;flex-direction:column;padding:16px;gap:12px}
+.gicon{width:100%;height:180px;border-radius:12px;display:flex;align-items:center;justify-content:center;font-size:48px;background:var(--ivory)}
 .gicon.b1{background:#F5F0EB}.gicon.b2{background:#F0F3F7}.gicon.b3{background:#F0F7F2}.gicon.b4{background:#FDF0ED}.gicon.b5{background:#F5F0EB}.gicon.b6{background:var(--ivory)}
 .gicon img{width:100%;height:100%;object-fit:cover;border-radius:12px}
 .ginfo{flex:1;min-width:0}
 .gtitle{font-size:15px;font-weight:600;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden}
-.gprice{color:var(--rose-dark);font-weight:700;font-size:18px;margin-top:4px}
+.gprice{color:var(--rose-dark);font-weight:700;font-size:20px;margin-top:6px}
 .gprice s{font-weight:400;font-size:12px;color:var(--muted);margin-left:4px}
-.gmeta{display:flex;gap:10px;margin-top:4px;font-size:12px;color:var(--muted)}
-.tabbar{position:fixed;bottom:0;left:0;right:0;background:var(--card);display:flex;border-top:1px solid var(--border);z-index:100;padding:6px 0 calc(6px+env(safe-area-inset-bottom))}
-.ti{flex:1;text-align:center;padding:4px 0;font-size:10px;color:var(--muted);cursor:pointer;transition:.2s}
-.ti .ticon{font-size:22px;display:block;margin-bottom:2px}
-.ti.active{color:var(--charcoal)}.ti.active .ticon{transform:translateY(-2px)}
-.ti .tdot{display:none;width:4px;height:4px;border-radius:50%;background:var(--rose-dark);margin:2px auto 0}
-.ti.active .tdot{display:block}
+.gmeta{display:flex;gap:12px;margin-top:6px;font-size:12px;color:var(--muted)}
+.tabbar{position:fixed;top:0;left:0;right:0;background:var(--card);display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid var(--border);z-index:100;padding:0 24px;height:70px}
+.tabbar-left{display:flex;align-items:center;gap:8px}
+.tabbar-title{font-size:20px;font-weight:700;color:var(--charcoal)}
+.ti{padding:10px 20px;font-size:14px;color:var(--muted);cursor:pointer;transition:.2s;border-radius:8px;margin:0 4px}
+.ti .ticon{font-size:18px;margin-right:6px;vertical-align:middle}
+.ti:hover{background:var(--ivory)}
+.ti.active{background:var(--charcoal);color:#fff;border-radius:8px}
+.ti.active .tdot{display:none}
 .btn{display:block;width:100%;padding:15px;border:none;border-radius:12px;font-size:15px;font-weight:600;cursor:pointer;text-align:center;transition:.2s}
 .btn-primary{background:var(--charcoal);color:#fff}.btn-primary:active{transform:scale(0.97)}
 .btn-outline{background:transparent;border:1.5px solid var(--border);color:var(--muted);font-weight:500}.btn-outline:active{background:var(--ivory)}
@@ -68,13 +70,13 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
 .ot{flex:1;padding:10px;border-radius:100px;font-size:13px;font-weight:600;cursor:pointer;background:var(--card);color:var(--muted);border:1px solid var(--border);text-align:center;transition:.2s}
 .ot.active{background:var(--charcoal);color:#fff;border-color:var(--charcoal)}
 .olist{padding:4px 20px;display:flex;flex-direction:column;gap:10px}
-.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:200}
-.modal-overlay.active{display:flex}.modal-bg{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(44,36,34,0.5);backdrop-filter:blur(12px)}
+.modal-overlay{display:none;position:fixed;top:0;left:0;right:0;bottom:0;z-index:200;align-items:center;justify-content:center}
+.modal-overlay.active{display:flex}.modal-bg{position:absolute;top:0;left:0;right:0;bottom:0;background:rgba(44,36,34,0.5);backdrop-filter:blur(8px)}
 .modal-overlay.active .modal-bg{opacity:1}
-.modal-overlay.active .modal-sheet{transform:translateY(0)}
-.modal-sheet{position:relative;background:var(--card);border-radius:24px 24px 0 0;padding:12px 24px 24px;width:100%;max-height:85vh;overflow-y:auto;transform:translateY(100%);transition:transform .4s cubic-bezier(0.22,1,0.36,1)}
-.mi{width:36px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 14px}
-.mt{font-size:17px;font-weight:700;margin-bottom:14px}
+.modal-overlay.active .modal-sheet{transform:scale(1);opacity:1}
+.modal-sheet{position:relative;background:var(--card);border-radius:16px;padding:24px;width:90%;max-width:520px;max-height:85vh;overflow-y:auto;transform:scale(0.95);opacity:0;transition:all .3s ease;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.mi{display:none}
+.mt{font-size:20px;font-weight:700;margin-bottom:18px}
 .detail-banner{margin:-12px -24px 14px;height:180px;display:flex;align-items:center;justify-content:center;font-size:64px}
 .detail-title{font-size:20px;font-weight:700}
 .detail-price{font-size:26px;color:var(--rose-dark);font-weight:700;margin:8px 0 14px}
@@ -117,27 +119,33 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
 .citem .cp{font-size:12px;color:var(--muted);margin-top:2px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 
 /* Chat */
-.msg-bubble{max-width:80%;padding:10px 14px;border-radius:14px;font-size:14px;line-height:1.5;word-break:break-word;margin-bottom:2px}
-.msg-bubble.mine{background:var(--charcoal);color:#fff;align-self:flex-end;border-bottom-right-radius:4px}
-.msg-bubble.theirs{background:var(--ivory);color:var(--charcoal);align-self:flex-start;border-bottom-left-radius:4px}
-.chat-order-card{margin:8px 0;padding:12px;border-radius:11px;background:var(--ivory);border:1px solid var(--border)}
-.chat-order-card .co-title{font-size:13px;font-weight:600}
-.chat-order-card .co-price{color:var(--rose-dark);font-weight:700;font-size:14px;margin:4px 0}
-.chat-order-card .co-actions{display:flex;gap:8px;margin-top:6px}
-.chat-order-card .co-actions button{flex:1;padding:7px;border:none;border-radius:8px;font-size:12px;font-weight:600;cursor:pointer}
-
-@media(min-width:500px){body{max-width:420px;margin:0 auto;border-left:1px solid var(--border);border-right:1px solid var(--border);min-height:100vh;background:var(--card)}}
+.msg-bubble{max-width:70%;padding:12px 16px;border-radius:16px;font-size:15px;line-height:1.6;word-break:break-word;margin-bottom:8px}
+.msg-bubble.mine{background:var(--charcoal);color:#fff;align-self:flex-end;border-bottom-right-radius:6px}
+.msg-bubble.theirs{background:var(--ivory);color:var(--charcoal);align-self:flex-start;border-bottom-left-radius:6px}
+.chat-order-card{margin:12px 0;padding:14px;border-radius:12px;background:var(--ivory);border:1px solid var(--border)}
+.chat-order-card .co-title{font-size:14px;font-weight:600}
+.chat-order-card .co-price{color:var(--rose-dark);font-weight:700;font-size:16px;margin:6px 0}
+.chat-order-card .co-actions{display:flex;gap:10px;margin-top:8px}
+.chat-order-card .co-actions button{flex:1;padding:10px;border:none;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer}
+.chat-order-card .co-actions button:first-child{background:var(--charcoal);color:#fff}
+.chat-order-card .co-actions button:last-child{background:var(--card);color:var(--charcoal);border:1px solid var(--border)}
 </style>
 </head>
 <body>
 
 <!-- HOME -->
 <div id="page-home" class="page active">
-  <div class="page-header"><h1>校园二手交易平台</h1><div style="width:36px;height:36px;border-radius:50%;background:var(--ivory);display:flex;align-items:center;justify-content:center;font-size:16px;cursor:pointer">🔔</div></div>
-  <div class="search-box">
-    <span class="si">🔍</span>
-    <input id="searchInput" placeholder="搜索商品..." onkeydown="if(event.key=='Enter')searchGoods()">
-    <button class="sb" onclick="searchGoods()">搜索</button>
+  <div class="page-header">
+    <div style="display:flex;align-items:center;gap:20px;flex:1;justify-content:flex-end">
+      <div style="width:40px;height:40px;border-radius:50%;background:var(--ivory);display:flex;align-items:center;justify-content:center;font-size:18px;cursor:pointer">🔔</div>
+    </div>
+  </div>
+  <div style="display:flex;align-items:center;gap:24px;padding:0 24px">
+    <div class="search-box" style="flex:1;margin:12px 0">
+      <span class="si">🔍</span>
+      <input id="searchInput" placeholder="搜索商品..." onkeydown="if(event.key=='Enter')searchGoods()">
+      <button class="sb" onclick="searchGoods()">搜索</button>
+    </div>
   </div>
   <div class="categories" id="catTags">
     <span class="cat active" onclick="filterCat('')">全部</span>
@@ -225,24 +233,29 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
 
 <!-- TABBAR -->
 <div class="tabbar">
-  <div class="ti active" onclick="switchTab('home')"><span class="ticon">🏠</span>首页<div class="tdot"></div></div>
-  <div class="ti" onclick="switchTab('message')"><span class="ticon">💬</span>消息<span id="unreadBadge" style="display:none;position:absolute;top:2px;right:8px;background:var(--rose-dark);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px">0</span><div class="tdot"></div></div>
-  <div class="ti" onclick="switchTab('publish')"><span class="ticon">✏️</span>发布<div class="tdot"></div></div>
-  <div class="ti" onclick="switchTab('orders')"><span class="ticon">📋</span>订单<div class="tdot"></div></div>
-  <div class="ti" onclick="switchTab('profile')"><span class="ticon">👤</span>我的<div class="tdot"></div></div>
+  <div class="tabbar-left">
+    <span class="tabbar-title">🏫 校园二手交易平台</span>
+  </div>
+  <div style="display:flex;align-items:center">
+    <div class="ti active" onclick="switchTab('home')"><span class="ticon">🏠</span>首页</div>
+    <div class="ti" onclick="switchTab('message')"><span class="ticon">💬</span>消息<span id="unreadBadge" style="display:none;background:var(--rose-dark);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;ml-2">0</span></div>
+    <div class="ti" onclick="switchTab('publish')"><span class="ticon">✏️</span>发布</div>
+    <div class="ti" onclick="switchTab('orders')"><span class="ticon">📋</span>订单</div>
+    <div class="ti" onclick="switchTab('profile')"><span class="ticon">👤</span>我的</div>
+  </div>
 </div>
 
 <!-- CHAT OVERLAY -->
-<div id="chatOverlay" style="display:none;position:fixed;top:0;bottom:80px;left:50%;transform:translateX(-50%);width:100%;max-width:420px;background:var(--cream);z-index:300;flex-direction:column">
-  <div style="padding:48px 20px 12px;background:var(--card);display:flex;align-items:center;gap:10px;border-bottom:1px solid var(--border);flex-shrink:0">
-    <span onclick="closeChatOverlay()" style="font-size:24px;cursor:pointer;padding:4px;line-height:1">←</span>
-    <div style="display:flex;align-items:center;gap:8px"><div id="chatTargetName" style="font-weight:700;font-size:16px">加载中...</div><span id="chatTargetRating" style="font-size:13px;color:var(--gold);font-weight:600"></span></div><div id="chatTargetSub" style="font-size:12px;color:var(--muted);flex:1;text-align:right">加载中</div>
+<div id="chatOverlay" style="display:none;position:fixed;top:70px;left:50%;transform:translateX(-50%);width:100%;max-width:600px;height:calc(100vh - 70px);background:var(--card);z-index:300;flex-direction:column;border-left:1px solid var(--border);border-right:1px solid var(--border);box-shadow:0 0 20px rgba(0,0,0,0.1)">
+  <div style="padding:16px 20px;background:var(--card);display:flex;align-items:center;gap:12px;border-bottom:1px solid var(--border);flex-shrink:0">
+    <span onclick="closeChatOverlay()" style="font-size:24px;cursor:pointer;padding:4px;line-height:1;color:var(--muted)">←</span>
+    <div style="display:flex;align-items:center;gap:8px"><div id="chatTargetName" style="font-weight:700;font-size:18px">加载中...</div><span id="chatTargetRating" style="font-size:14px;color:var(--gold);font-weight:600"></span></div><div id="chatTargetSub" style="font-size:13px;color:var(--muted);flex:1;text-align:right">商品咨询</div>
   </div>
-  <div id="chatOrderArea" style="padding:0 20px;flex-shrink:0"></div>
-  <div id="chatMsgs" style="flex:1;overflow-y:auto;padding:10px 20px;display:flex;flex-direction:column;min-height:0"></div>
-  <div style="flex-shrink:0;padding:8px 16px calc(8px+env(safe-area-inset-bottom));background:var(--card);border-top:1px solid var(--border);display:flex;gap:8px">
-    <input id="chatInput" placeholder="输入消息..." onkeydown="if(event.key=='Enter')sendChatMsg()" style="flex:1;padding:12px 14px;border:1.5px solid var(--border);border-radius:11px;font-size:15px;outline:none;font-family:inherit;background:var(--ivory)">
-    <button onclick="sendChatMsg()" style="padding:12px 20px;border:none;border-radius:11px;background:var(--charcoal);color:#fff;font-size:14px;font-weight:600;cursor:pointer;white-space:nowrap">发送</button>
+  <div id="chatOrderArea" style="padding:12px 20px;border-bottom:1px solid var(--border);flex-shrink:0"></div>
+  <div id="chatMsgs" style="flex:1;overflow-y:auto;padding:16px 20px;display:flex;flex-direction:column;min-height:0"></div>
+  <div style="flex-shrink:0;padding:12px 20px;background:var(--card);border-top:1px solid var(--border);display:flex;gap:12px">
+    <input id="chatInput" placeholder="输入消息..." onkeydown="if(event.key=='Enter')sendChatMsg()" style="flex:1;padding:14px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;outline:none;font-family:inherit;background:var(--ivory)">
+    <button onclick="sendChatMsg()" style="padding:14px 24px;border:none;border-radius:12px;background:var(--charcoal);color:#fff;font-size:15px;font-weight:600;cursor:pointer;white-space:nowrap">发送</button>
   </div>
 </div>
 
@@ -359,7 +372,7 @@ async function loadGoods(){
         el.innerHTML=d.data.map(g=>{
           const ic=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'🏡':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':'📎'
           const cl=g.category==='教材教辅'?'b1':g.category==='电子数码'?'b2':g.category==='生活用品'?'b3':g.category==='服饰美妆'?'b4':g.category==='体育用品'?'b5':'b6'
-          return `<div class="gc" onclick="showDetail(${g.id})"><div class="gci">${goodsIconHtml(g,cl,ic)}<div class="ginfo"><div class="gtitle">${g.title}</div><div class="gprice">¥${g.price}<span style="font-weight:400;font-size:12px;color:var(--muted);margin-left:4px">${g.category||''}</span></div><div class="gmeta"><span>📍 ${g.location||'校内'}</span><span class="tag g">在售</span></div></div></div></div>`
+          return `<div class="gc" onclick="showDetail(${g.id})"><div class="gci">${goodsIconHtml(g,cl,ic)}<div class="ginfo"><div class="gtitle">${g.title}</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><div class="gprice">¥${g.price}</div><span style="font-size:13px;color:var(--muted)">${g.category||''}</span></div><div class="gmeta"><span>📍 ${g.location||'校内'}</span><span class="tag g">在售</span></div></div></div></div>`
         }).join('')
       }else{el.innerHTML='<div class="empty"><div class="ea">😶</div><h3>加载失败</h3></div>'}
     }catch(e){el.innerHTML='<div class="empty"><div class="ea">😶</div><h3>网络开小差了</h3></div>'}
@@ -372,10 +385,10 @@ async function loadGoods(){
     if(d.code===200&&d.data&&d.data.content){
       if(!d.data.content.length){el.innerHTML='<div class="empty"><div class="ea">📦</div><h3>这里还空空的</h3></div>';return}
       el.innerHTML=d.data.content.map(g=>{
-        const ic=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'🏡':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':'📎'
-        const cl=g.category==='教材教辅'?'b1':g.category==='电子数码'?'b2':g.category==='生活用品'?'b3':g.category==='服饰美妆'?'b4':g.category==='体育用品'?'b5':'b6'
-        return `<div class="gc" onclick="showDetail(${g.id})"><div class="gci">${goodsIconHtml(g,cl,ic)}<div class="ginfo"><div class="gtitle">${g.title}</div><div class="gprice">¥${g.price}<span style="font-weight:400;font-size:12px;color:var(--muted);margin-left:4px">${g.category||''}</span></div><div class="gmeta"><span>📍 ${g.location||'校内'}</span><span class="tag g">在售</span></div></div></div></div>`
-      }).join('')
+          const ic=g.category==='教材教辅'?'📖':g.category==='电子数码'?'💻':g.category==='生活用品'?'🏡':g.category==='服饰美妆'?'👗':g.category==='体育用品'?'⚽':'📎'
+          const cl=g.category==='教材教辅'?'b1':g.category==='电子数码'?'b2':g.category==='生活用品'?'b3':g.category==='服饰美妆'?'b4':g.category==='体育用品'?'b5':'b6'
+          return `<div class="gc" onclick="showDetail(${g.id})"><div class="gci">${goodsIconHtml(g,cl,ic)}<div class="ginfo"><div class="gtitle">${g.title}</div><div style="display:flex;align-items:center;gap:8px;margin-top:6px"><div class="gprice">¥${g.price}</div><span style="font-size:13px;color:var(--muted)">${g.category||''}</span></div><div class="gmeta"><span>📍 ${g.location||'校内'}</span><span class="tag g">在售</span></div></div></div></div>`
+        }).join('')
     }else{el.innerHTML='<div class="empty"><div class="ea">😶</div><h3>加载失败</h3></div>'}
   }catch(e){el.innerHTML='<div class="empty"><div class="ea">😶</div><h3>网络开小差了</h3></div>'}
 }
