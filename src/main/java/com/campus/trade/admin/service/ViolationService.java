@@ -3,6 +3,7 @@ package com.campus.trade.admin.service;
 import com.campus.trade.admin.entity.Violation;
 import com.campus.trade.admin.repository.ViolationRepository;
 import com.campus.trade.common.ApiResult;
+import com.campus.trade.message.service.MessageService;
 import com.campus.trade.user.entity.User;
 import com.campus.trade.user.repository.UserRepository;
 import lombok.extern.slf4j.Slf4j;
@@ -23,10 +24,12 @@ public class ViolationService {
     
     private final ViolationRepository violationRepository;
     private final UserRepository userRepository;
+    private final MessageService messageService;
     
-    public ViolationService(ViolationRepository violationRepository, UserRepository userRepository) {
+    public ViolationService(ViolationRepository violationRepository, UserRepository userRepository, MessageService messageService) {
         this.violationRepository = violationRepository;
         this.userRepository = userRepository;
+        this.messageService = messageService;
     }
     
     /**
@@ -84,11 +87,15 @@ public class ViolationService {
         
         // 根据处理方式更新用户状态
         User user = userRepository.findById(violation.getUserId()).get();
+        String notifyTitle = "";
+        String notifyContent = "";
         
         switch (handleMethod) {
             case "WARNING":
                 // 警告，不修改状态
                 log.info("对用户{}发出警告", violation.getUserId());
+                notifyTitle = "违规警告";
+                notifyContent = "您的账户因违规行为收到警告：" + violation.getDescription() + "。请遵守平台规则，否则将影响您的信用分。";
                 break;
                 
             case "DEDUCT_CREDIT":
@@ -97,6 +104,8 @@ public class ViolationService {
                 user.setCreditScore(newScore);
                 userRepository.save(user);
                 log.info("扣除用户{}信用分{}，当前信用分：{}", violation.getUserId(), violation.getDeductPoints(), newScore);
+                notifyTitle = "信用分扣除";
+                notifyContent = "您的账户因违规行为被扣除" + violation.getDeductPoints() + "信用分。违规原因：" + violation.getDescription() + "。当前信用分：" + newScore + "分。";
                 break;
                 
             case "BAN_TEMP":
@@ -104,6 +113,8 @@ public class ViolationService {
                 user.setStatus(1); // 禁用状态
                 userRepository.save(user);
                 log.info("临时封禁用户{}，截止时间：{}", violation.getUserId(), banUntil);
+                notifyTitle = "账号临时封禁";
+                notifyContent = "您的账户因违规行为被临时封禁至" + banUntil + "。违规原因：" + violation.getDescription() + "。封禁期间无法进行交易操作。";
                 break;
                 
             case "BAN_PERMANENT":
@@ -111,8 +122,13 @@ public class ViolationService {
                 user.setStatus(1);
                 userRepository.save(user);
                 log.info("永久封禁用户{}", violation.getUserId());
+                notifyTitle = "账号永久封禁";
+                notifyContent = "您的账户因严重违规行为被永久封禁。违规原因：" + violation.getDescription() + "。如有异议，请联系客服。";
                 break;
         }
+        
+        // 发送系统通知给用户
+        messageService.sendSystemMessage(violation.getUserId(), notifyTitle, notifyContent, null);
         
         return ApiResult.success("违规处理完成");
     }

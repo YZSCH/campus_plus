@@ -33,4 +33,12 @@ public class MessageController {
          public ApiResult<List<Long>> conversations(Authentication auth) {
                  return messageService.getConversationUserIds((Long) auth.getPrincipal());
          }
+
+    /**
+     * 获取用户的系统通知
+     */
+    @GetMapping("/notifications")
+    public ApiResult<List<Message>> notifications(Authentication auth) {
+        return messageService.myNotifications((Long) auth.getPrincipal());
+    }
 }
