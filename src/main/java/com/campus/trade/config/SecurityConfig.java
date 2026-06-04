@@ -28,8 +28,8 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http.csrf().disable()
-            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
-            .authorizeRequests()
+                .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS).and()
+                .authorizeRequests()
                 // 公开访问的静态资源和页面
                 .antMatchers("/", "/index.html", "/favicon.ico").permitAll()
                 .antMatchers("/css/**", "/js/**", "/img/**").permitAll()
@@ -37,6 +37,8 @@ public class SecurityConfig {
                 .antMatchers("/uploads/**").permitAll()
                 // 用户认证相关（注册、登录、发送验证码）
                 .antMatchers("/api/user/register", "/api/user/login", "/api/user/send-code").permitAll()
+                // 支付宝支付回调（同步返回和异步通知）
+                .antMatchers("/api/alipay/return", "/api/alipay/notify").permitAll()
                 // 商品列表和详情可以匿名访问
                 .antMatchers("/api/goods/list", "/api/goods/**").permitAll()
                 // 获取评价评分可以公开访问
@@ -52,8 +54,8 @@ public class SecurityConfig {
                 .antMatchers("/api/admin/**").hasRole("admin")
                 // 其他所有请求需要认证
                 .anyRequest().authenticated()
-            .and()
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+                .and()
+                .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
     }
 }
