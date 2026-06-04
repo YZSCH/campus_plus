@@ -20,6 +20,9 @@ public class Order {
     @Column(columnDefinition = "TEXT") private String remark;
 
     /** 支付单号（关联支付宝交易） */
+    @Transient
+    private String goodsTitle;
+
     @Column(name = "pay_id", length = 50)
     private String payId;
 

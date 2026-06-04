@@ -667,7 +667,7 @@ async function renderOrders(){
         return `<div class="gc" onclick="showOrderDetail(${o.id})" style="cursor:pointer">
           <div class="gci" style="padding:12px 14px;position:relative">
             <div class="ginfo">
-              <div class="gtitle" style="font-size:13px;margin-bottom:6px">订单 ${o.orderNo}</div>
+              <div class="gtitle" style="font-size:15px;font-weight:600;margin-bottom:6px">${o.goodsTitle||'未知商品'}</div>
               <div class="gprice" style="font-size:16px;margin-bottom:6px">¥${o.totalPrice||'0.00'}</div>
               <span class="tag ${tc}" style="padding:4px 12px;font-size:12px">${sm[o.status]||o.status}</span>
               <div style="position:absolute;right:14px;bottom:12px;display:flex;gap:8px;align-items:center">
@@ -715,10 +715,8 @@ async function showOrderDetail(id){
     }
     const h=`<div class="mi"></div><div class="mt">📋 订单详情</div>
       <div style="background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px">
-        <div style="font-size:13px;color:var(--muted);margin-bottom:4px">订单号</div><div style="font-size:15px;font-weight:600">${o.orderNo}</div>
-      </div>
-      <div style="background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px">
-        <div style="font-size:13px;color:var(--muted);margin-bottom:4px">商品</div><div style="font-size:15px;font-weight:600">${g?g.title:'未知商品'}</div>
+        <div style="font-size:15px;font-weight:600">${g?g.title:'未知商品'}</div>
+        <div style="font-size:12px;color:var(--muted);margin-top:4px">订单号：${o.orderNo}</div>
         <div style="font-size:14px;color:var(--success);margin-top:4px">¥${o.totalPrice||'0.00'}</div>
       </div>
       <div style="background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px">

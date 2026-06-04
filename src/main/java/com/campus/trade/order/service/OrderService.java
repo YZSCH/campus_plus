@@ -54,14 +54,22 @@ public class OrderService {
 
     public ApiResult<Page<Order>> myBuyOrders(Long userId, int page, int size, String status) {
         var p = PageRequest.of(page, size);
+        Page<Order> orders;
         if (status != null && !status.isEmpty()) {
-            return ApiResult.success(orderRepository.findByBuyerIdAndStatusOrderByCreatedAtDesc(userId, status, p));
+            orders = orderRepository.findByBuyerIdAndStatusOrderByCreatedAtDesc(userId, status, p);
+        } else {
+            orders = orderRepository.findByBuyerIdOrderByCreatedAtDesc(userId, p);
         }
-        return ApiResult.success(orderRepository.findByBuyerIdOrderByCreatedAtDesc(userId, p));
+        orders.forEach(o -> goodsRepository.findById(o.getGoodsId())
+                .ifPresent(g -> o.setGoodsTitle(g.getTitle())));
+        return ApiResult.success(orders);
     }
 
     public ApiResult<Page<Order>> mySellOrders(Long userId, int page, int size) {
-        return ApiResult.success(orderRepository.findBySellerIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size)));
+        Page<Order> orders = orderRepository.findBySellerIdOrderByCreatedAtDesc(userId, PageRequest.of(page, size));
+        orders.forEach(o -> goodsRepository.findById(o.getGoodsId())
+                .ifPresent(g -> o.setGoodsTitle(g.getTitle())));
+        return ApiResult.success(orders);
     }
 
     public ApiResult<Order> updateStatus(Long id, String status) {
