@@ -35,6 +35,8 @@ public class GoodsController {
         if (user == null) return ApiResult.error(401, "用户不存在");
         if (user.getAuthStatus() == null || user.getAuthStatus() != 1)
             return ApiResult.error(403, "请先完成校园认证");
+        if (user.getCreditScore() == null || user.getCreditScore() < 80)
+            return ApiResult.error(403, "信用分低于80分，无法发布商品");
         goods.setUserId(userId);
         return goodsService.create(goods);
     }

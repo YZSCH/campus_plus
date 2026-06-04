@@ -125,7 +125,7 @@ public class OrderService {
     // ==================== 订单详情 ====================
 
     /**
-     * 获取订单详情（包含商品和卖家信息）
+     * 获取订单详情（包含商品、卖家信息和买家信息）
      * 只有买家或卖家可以查看订单详情
      */
     public ApiResult<OrderDetailVO> getOrderDetail(Long orderId, Long userId) {
@@ -146,10 +146,14 @@ public class OrderService {
         // 查询卖家信息
         User seller = userRepository.findById(order.getSellerId()).orElse(null);
 
+        // 查询买家信息
+        User buyer = userRepository.findById(order.getBuyerId()).orElse(null);
+
         OrderDetailVO vo = OrderDetailVO.builder()
                 .order(order)
                 .goods(goods)
                 .seller(seller)
+                .buyer(buyer)
                 .build();
 
         return ApiResult.success(vo);
@@ -216,10 +220,27 @@ public class OrderService {
         // 担保交易：订单完成后，释放资金给卖家
         walletService.releaseFunds(orderId);
 
+        // 订单完成后，买家和卖家各增加10信用分
+        addCreditScore(order.getBuyerId(), 10);
+        addCreditScore(order.getSellerId(), 10);
+
         // 发送系统通知
         messageService.notifyBuyer(order.getBuyerId(), "received", order.getOrderNo(), order.getGoodsId());
         messageService.notifySeller(order.getSellerId(), "received", order.getOrderNo(), order.getGoodsId());
 
         return ApiResult.success("签收成功，交易完成", order);
+    }
+
+    /**
+     * 增加用户信用分
+     * @param userId 用户ID
+     * @param score 增加的分数
+     */
+    private void addCreditScore(Long userId, int score) {
+        userRepository.findById(userId).ifPresent(user -> {
+            int newScore = (user.getCreditScore() == null ? 100 : user.getCreditScore()) + score;
+            user.setCreditScore(newScore);
+            userRepository.save(user);
+        });
     }
 }

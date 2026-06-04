@@ -4,6 +4,8 @@ import com.campus.trade.common.ApiResult;
 import com.campus.trade.order.dto.OrderDetailVO;
 import com.campus.trade.order.entity.Order;
 import com.campus.trade.order.service.OrderService;
+import com.campus.trade.user.entity.User;
+import com.campus.trade.user.repository.UserRepository;
 import org.springframework.data.domain.Page;
 import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
@@ -12,15 +14,21 @@ import org.springframework.web.bind.annotation.*;
 @RequestMapping("/api/order")
 public class OrderController {
     private final OrderService orderService;
+    private final UserRepository userRepository;
 
-    public OrderController(OrderService os) {
+    public OrderController(OrderService os, UserRepository ur) {
         orderService = os;
+        userRepository = ur;
     }
 
     @PostMapping("/create")
     public ApiResult<Order> create(@RequestBody Order order, Authentication auth) {
         if (auth == null) return ApiResult.error(401, "请先登录");
         Long userId = (Long) auth.getPrincipal();
+        var user = userRepository.findById(userId).orElse(null);
+        if (user == null) return ApiResult.error(401, "用户不存在");
+        if (user.getCreditScore() == null || user.getCreditScore() < 60)
+            return ApiResult.error(403, "信用分低于60分，无法购买商品");
         order.setBuyerId(userId);
         return orderService.create(order);
     }

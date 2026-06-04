@@ -10,7 +10,7 @@ import lombok.NoArgsConstructor;
 
 /**
  * 订单详情 VO
- * 包含：订单信息 + 商品信息 + 卖家信息
+ * 包含：订单信息 + 商品信息 + 卖家信息 + 买家信息
  */
 @Data
 @NoArgsConstructor
@@ -26,4 +26,7 @@ public class OrderDetailVO {
 
     /** 卖家信息 */
     private User seller;
+
+    /** 买家信息 */
+    private User buyer;
 }

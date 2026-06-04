@@ -238,7 +238,7 @@ body{font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Helvetica Ne
   </div>
   <div style="display:flex;align-items:center">
     <div class="ti active" onclick="switchTab('home')"><span class="ticon">🏠</span>首页</div>
-    <div class="ti" onclick="switchTab('message')"><span class="ticon">💬</span>消息<span id="unreadBadge" style="display:none;background:var(--rose-dark);color:#fff;font-size:10px;padding:1px 6px;border-radius:10px;ml-2">0</span></div>
+    <div class="ti" onclick="switchTab('message')"><span class="ticon">💬</span>消息</div>
     <div class="ti" onclick="switchTab('publish')"><span class="ticon">✏️</span>发布</div>
     <div class="ti" onclick="switchTab('orders')"><span class="ticon">📋</span>订单</div>
     <div class="ti" onclick="switchTab('profile')"><span class="ticon">👤</span>我的</div>
@@ -687,7 +687,7 @@ async function showOrderDetail(id){
     const r=await fetch(`${API}/api/order/${id}/detail`,{headers:{'Authorization':'Bearer '+T()}})
     const d=await r.json()
     if(d.code!==200||!d.data){alert('加载详情失败');return}
-    const v=d.data,o=v.order,g=v.goods,s=v.seller
+    const v=d.data,o=v.order,g=v.goods,s=v.seller,b=v.buyer
     const sm={pending:'待处理',paid:'待发货',shipped:'已发货',received:'已收货',cancelled:'已取消'}
     const pm={unpaid:'未支付',paid:'已支付'}
     const tc=o.status==='pending'?'y':o.status==='cancelled'?'r':'g'
@@ -722,6 +722,12 @@ async function showOrderDetail(id){
       <div style="background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px">
         <div style="font-size:13px;color:var(--muted);margin-bottom:4px">卖家</div><div style="font-size:15px;font-weight:600">${s?s.username:'未知用户'}</div>
         ${s&&s.phone?`<div style="font-size:13px;color:var(--muted);margin-top:4px">📞 ${s.phone}</div>`:''}
+        <div style="font-size:13px;color:var(--gold);margin-top:4px;font-weight:600">💰 信用分：${s&&s.creditScore?s.creditScore:'-'}分</div>
+      </div>
+      <div style="background:var(--ivory);border-radius:12px;padding:14px;margin-bottom:10px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:4px">买家</div><div style="font-size:15px;font-weight:600">${b?b.username:'未知用户'}</div>
+        ${b&&b.phone?`<div style="font-size:13px;color:var(--muted);margin-top:4px">📞 ${b.phone}</div>`:''}
+        <div style="font-size:13px;color:var(--gold);margin-top:4px;font-weight:600">💰 信用分：${b&&b.creditScore?b.creditScore:'-'}分</div>
       </div>
       <div style="display:flex;gap:10px;margin-bottom:10px">
         <div style="flex:1;background:var(--ivory);border-radius:12px;padding:14px;text-align:center">
